@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,6 +11,12 @@
       left: 200px;
       width: 50px;
       height: 50px;
+      transition: transform 0.1s linear;
+    }
+    #moneda {
+      position: absolute;
+      width: 30px;
+      height: 30px;
     }
     #pista {
       position: relative;
@@ -19,35 +26,94 @@
       margin: 40px auto;
       background-color: #f0f0f0;
     }
+    #puntos {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <h2 style="text-align:center;">Carrito Virtual</h2>
+  <div id="puntos">Puntos: 0</div>
   <div id="pista">
     <img id="carrito" src="CARRITO.png" alt="Carrito">
+    <img id="moneda" src="moneda.png" alt="Moneda">
   </div>
-<script>
-  let carrito = document.getElementById("carrito");
-  let x = 200;
-  let y = 200;
 
-  function moverCarrito(direccion) {
-    if (direccion === "U") y -= 10;
-    else if (direccion === "D") y += 10;
-    else if (direccion === "L") x -= 10;
-    else if (direccion === "R") x += 10;
+  <script>
+    let carrito = document.getElementById("carrito");
+    let moneda = document.getElementById("moneda");
+    let pista = document.getElementById("pista");
+    let puntos = 0;
+    let x = 200;
+    let y = 200;
+    const paso = 10;
 
-    carrito.style.top = y + "px";
-    carrito.style.left = x + "px";
-  }
+    function colocarMoneda() {
+      const maxX = pista.clientWidth - 30;
+      const maxY = pista.clientHeight - 30;
+      const randX = Math.floor(Math.random() * maxX);
+      const randY = Math.floor(Math.random() * maxY);
+      moneda.style.left = randX + "px";
+      moneda.style.top = randY + "px";
+    }
 
-  setInterval(() => {
-    fetch("https://hci-car-remote.onrender.com")  // ✅ esta es la URL correcta
-      .then(response => response.text())
-      .then(cmd => moverCarrito(cmd.trim()))
-      .catch(err => console.log("Sin conexión al servidor"));
-  }, 300);
-</script>
+    function detectarColision() {
+      const rc = carrito.getBoundingClientRect();
+      const rm = moneda.getBoundingClientRect();
 
+      const overlap = !(
+        rc.right < rm.left ||
+        rc.left > rm.right ||
+        rc.bottom < rm.top ||
+        rc.top > rm.bottom
+      );
+
+      if (overlap) {
+        puntos++;
+        document.getElementById("puntos").textContent = "Puntos: " + puntos;
+        colocarMoneda();
+      }
+    }
+
+    function moverCarrito(direccion) {
+      const pistaWidth = pista.clientWidth;
+      const pistaHeight = pista.clientHeight;
+      const carritoWidth = carrito.clientWidth;
+      const carritoHeight = carrito.clientHeight;
+
+      if (direccion === "U") {
+        y -= paso;
+        carrito.style.transform = "rotate(-90deg)";
+      } else if (direccion === "D") {
+        y += paso;
+        carrito.style.transform = "rotate(90deg)";
+      } else if (direccion === "L") {
+        x -= paso;
+        carrito.style.transform = "rotate(180deg)";
+      } else if (direccion === "R") {
+        x += paso;
+        carrito.style.transform = "rotate(0deg)";
+      }
+
+      x = Math.max(0, Math.min(x, pistaWidth - carritoWidth));
+      y = Math.max(0, Math.min(y, pistaHeight - carritoHeight));
+
+      carrito.style.left = x + "px";
+      carrito.style.top = y + "px";
+
+      detectarColision();
+    }
+
+    colocarMoneda();
+
+    setInterval(() => {
+      fetch("https://hci-car-remote.onrender.com")
+        .then(response => response.text())
+        .then(cmd => moverCarrito(cmd.trim()))
+        .catch(err => console.log("Sin conexión al servidor"));
+    }, 300);
+  </script>
 </body>
 </html>
