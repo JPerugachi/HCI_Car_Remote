@@ -10,7 +10,7 @@
       left: 200px;
       width: 50px;
       height: 100px;
-      transition: transform 0.3s ease-in-out;
+      transition: transform 0.5s ease-in-out; /* Giro más lento */
     }
     #moneda {
       position: absolute;
@@ -23,7 +23,7 @@
       height: 300px;
       border: 2px solid #000000;
       margin: 40px auto;
-      background-color: #636363;
+      background-color: #f0f0f0;
     }
     #puntos {
       text-align: center;
@@ -48,7 +48,7 @@
     let x = 200;
     let y = 200;
     const paso = 10;
-    let angulo = 0; // en grados
+    let angulo = 0;
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -78,11 +78,8 @@
     }
 
     function rotar(direccion) {
-      if (direccion === "R") {
-        angulo += 90; // sentido horario
-      } else if (direccion === "L") {
-        angulo -= 90; // sentido antihorario
-      }
+      if (direccion === "R") angulo += 90;
+      else if (direccion === "L") angulo -= 90;
       carrito.style.transform = `rotate(${angulo}deg)`;
     }
 
