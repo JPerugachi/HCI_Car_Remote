@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Carrito Virtual</title>
+  <style>
+    #carrito {
+      position: absolute;
+      top: 200px;
+      left: 200px;
+      width: 50px;
+      height: 50px;
+    }
+    #pista {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      border: 2px solid #333;
+      margin: 40px auto;
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">Carrito Virtual</h2>
+  <div id="pista">
+    <img id="carrito" src="CARRITO.png" alt="Carrito">
+
+  </div>
+
+  <script>
+    let carrito = document.getElementById("carrito");
+    let x = 200;
+    let y = 200;
+
+    function moverCarrito(direccion) {
+      if (direccion === "U") y -= 10;
+      else if (direccion === "D") y += 10;
+      else if (direccion === "L") x -= 10;
+      else if (direccion === "R") x += 10;
+
+      carrito.style.top = y + "px";
+      carrito.style.left = x + "px";
+    }
+
+    setInterval(() => {
+      fetch("http://172.29.1.209:5000")
+        .then(response => response.text())
+        .then(cmd => moverCarrito(cmd.trim()))
+        .catch(err => console.log("Sin conexión al servidor"));
+    }, 300);
+  </script>
+</body>
+</html>
