@@ -10,7 +10,7 @@
       left: 200px;
       width: 50px;
       height: 100px;
-      transition: transform 0.1s linear;
+      transition: transform 0.5s ease-in-out;
     }
     #moneda {
       position: absolute;
@@ -19,36 +19,48 @@
     }
     #pista {
       position: relative;
-      width: 600px;
-      height: 3%;
-      border: 2px solid #333;
+      width: 550px;
+      height: 300px;
+      border: 2px solid #000000;
       margin: 40px auto;
-      background-color: #b2f1ec;
+      background-color: #f0f0f0;
     }
     #puntos {
       text-align: center;
       font-size: 20px;
       font-weight: bold;
     }
+    #mensaje {
+      text-align: center;
+      font-size: 22px;
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h2 style="text-align:center;">Carrito Snake</h2>
   <div id="puntos">Puntos: 0</div>
+  <div id="mensaje">¡Chocaste!</div>
   <div id="pista">
     <img id="carrito" src="CARRITO.png" alt="Carrito">
     <img id="moneda" src="moneda.png" alt="Moneda">
   </div>
 
   <script>
-    let carrito = document.getElementById("carrito");
-    let moneda = document.getElementById("moneda");
-    let pista = document.getElementById("pista");
+    const carrito = document.getElementById("carrito");
+    const moneda = document.getElementById("moneda");
+    const pista = document.getElementById("pista");
+    const mensaje = document.getElementById("mensaje");
+
     let puntos = 0;
     let x = 200;
     let y = 200;
     const paso = 10;
-    let direccionActual = "U"; // U, D, L, R
+    let angulo = 0;
+    let juegoActivo = true;
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -59,7 +71,7 @@
       moneda.style.top = randY + "px";
     }
 
-    function detectarColision() {
+    function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect();
       const rm = moneda.getBoundingClientRect();
 
@@ -77,66 +89,69 @@
       }
     }
 
+    function perderJuego() {
+      juegoActivo = false;
+      mensaje.style.display = "block";
+      puntos = 0;
+      document.getElementById("puntos").textContent = "Puntos: 0";
+    }
+
     function rotar(direccion) {
-      const rotaciones = {
-        "U": { "L": "L", "R": "R" },
-        "D": { "L": "R", "R": "L" },
-        "L": { "L": "D", "R": "U" },
-        "R": { "L": "U", "R": "D" }
-      };
-      direccionActual = rotaciones[direccionActual][direccion];
-      actualizarRotacionVisual();
+      if (!juegoActivo) return;
+      if (direccion === "R") angulo += 90;
+      else if (direccion === "L") angulo -= 90;
+      carrito.style.transform = `rotate(${angulo}deg)`;
     }
 
-    function actualizarRotacionVisual() {
-      if (direccionActual === "U") carrito.style.transform = "rotate(0deg)";
-      else if (direccionActual === "R") carrito.style.transform = "rotate(90deg)";
-      else if (direccionActual === "D") carrito.style.transform = "rotate(180deg)";
-      else if (direccionActual === "L") carrito.style.transform = "rotate(-90deg)";
-    }
+    function moverPaso(sentido) {
+      if (!juegoActivo) return;
 
-    function moverPaso(direccionMovimiento) {
       const pistaWidth = pista.clientWidth;
       const pistaHeight = pista.clientHeight;
       const carritoWidth = carrito.clientWidth;
       const carritoHeight = carrito.clientHeight;
 
-      let dx = 0, dy = 0;
-      if (direccionActual === "U") dy = -1;
-      else if (direccionActual === "D") dy = 1;
-      else if (direccionActual === "L") dx = -1;
-      else if (direccionActual === "R") dx = 1;
+      const rad = angulo * Math.PI / 180;
+      let dx = Math.round(Math.sin(rad));
+      let dy = -Math.round(Math.cos(rad)); // ← ahora el capó apunta hacia arriba
 
-      if (direccionMovimiento === "D") {
+      if (sentido === "D") {
         dx *= -1;
         dy *= -1;
       }
 
-      x += dx * paso;
-      y += dy * paso;
+      const nuevoX = x + dx * paso;
+      const nuevoY = y + dy * paso;
 
-      x = Math.max(0, Math.min(x, pistaWidth - carritoWidth));
-      y = Math.max(0, Math.min(y, pistaHeight - carritoHeight));
+      // Detectar choque con bordes
+      if (
+        nuevoX < 0 || nuevoX > pistaWidth - carritoWidth ||
+        nuevoY < 0 || nuevoY > pistaHeight - carritoHeight
+      ) {
+        perderJuego();
+        return;
+      }
 
+      x = nuevoX;
+      y = nuevoY;
       carrito.style.left = x + "px";
       carrito.style.top = y + "px";
 
-      detectarColision();
+      detectarColisionMoneda();
     }
 
     colocarMoneda();
-    actualizarRotacionVisual();
 
     setInterval(() => {
       fetch("https://hci-car-remote.onrender.com")
-        .then(response => response.text())
+        .then(r => r.text())
         .then(cmd => {
+          if (!cmd || !juegoActivo) return;
           cmd = cmd.trim();
-          if (!cmd) return;
           if (cmd === "L" || cmd === "R") rotar(cmd);
           else if (cmd === "U" || cmd === "D") moverPaso(cmd);
         })
-        .catch(err => console.log("Sin conexión al servidor"));
+        .catch(() => {});
     }, 300);
   </script>
 </body>
