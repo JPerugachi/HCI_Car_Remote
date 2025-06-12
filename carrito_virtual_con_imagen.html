@@ -43,7 +43,7 @@
     }
 
     setInterval(() => {
-      fetch("https://hci-car-remote.onrender.com")
+      fetch("https://hci-car-remote.onrender.com/carrito_virtual_con_imagen.html")
         .then(response => response.text())
         .then(cmd => moverCarrito(cmd.trim()))
         .catch(err => console.log("Sin conexión al servidor"));
