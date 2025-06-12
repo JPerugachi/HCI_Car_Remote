@@ -9,7 +9,7 @@
       top: 200px;
       left: 200px;
       width: 50px;
-      height: 50px;
+      height: 100px;
       transition: transform 0.1s linear;
     }
     #moneda {
@@ -89,10 +89,10 @@
     }
 
     function actualizarRotacionVisual() {
-      if (direccionActual === "U") carrito.style.transform = "rotate(-90deg)";
-      else if (direccionActual === "D") carrito.style.transform = "rotate(90deg)";
-      else if (direccionActual === "L") carrito.style.transform = "rotate(180deg)";
-      else if (direccionActual === "R") carrito.style.transform = "rotate(0deg)";
+      if (direccionActual === "U") carrito.style.transform = "rotate(0deg)";
+      else if (direccionActual === "R") carrito.style.transform = "rotate(90deg)";
+      else if (direccionActual === "D") carrito.style.transform = "rotate(180deg)";
+      else if (direccionActual === "L") carrito.style.transform = "rotate(-90deg)";
     }
 
     function moverPaso(direccionMovimiento) {
@@ -132,7 +132,7 @@
         .then(response => response.text())
         .then(cmd => {
           cmd = cmd.trim();
-          if (!cmd) return;  // 🛑 No hacer nada si no hay comando
+          if (!cmd) return;
           if (cmd === "L" || cmd === "R") rotar(cmd);
           else if (cmd === "U" || cmd === "D") moverPaso(cmd);
         })
