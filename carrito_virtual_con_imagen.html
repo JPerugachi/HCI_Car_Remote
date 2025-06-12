@@ -10,7 +10,7 @@
       left: 200px;
       width: 50px;
       height: 100px;
-      transition: transform 0.1s linear;
+      transition: transform 0.3s ease-in-out;
     }
     #moneda {
       position: absolute;
@@ -19,11 +19,11 @@
     }
     #pista {
       position: relative;
-      width: 600px;
-      height: 400px;
-      border: 2px solid #333;
+      width: 550px;
+      height: 300px;
+      border: 2px solid #000000;
       margin: 40px auto;
-      background-color: #f0f0f0;
+      background-color: #636363;
     }
     #puntos {
       text-align: center;
@@ -48,7 +48,7 @@
     let x = 200;
     let y = 200;
     const paso = 10;
-    let direccionActual = "U"; // U, D, L, R
+    let angulo = 0; // en grados
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -78,36 +78,25 @@
     }
 
     function rotar(direccion) {
-      const rotaciones = {
-        "U": { "L": "L", "R": "R" },
-        "D": { "L": "R", "R": "L" },
-        "L": { "L": "D", "R": "U" },
-        "R": { "L": "U", "R": "D" }
-      };
-      direccionActual = rotaciones[direccionActual][direccion];
-      actualizarRotacionVisual();
+      if (direccion === "R") {
+        angulo += 90; // sentido horario
+      } else if (direccion === "L") {
+        angulo -= 90; // sentido antihorario
+      }
+      carrito.style.transform = `rotate(${angulo}deg)`;
     }
 
-    function actualizarRotacionVisual() {
-      if (direccionActual === "U") carrito.style.transform = "rotate(0deg)";
-      else if (direccionActual === "R") carrito.style.transform = "rotate(90deg)";
-      else if (direccionActual === "D") carrito.style.transform = "rotate(180deg)";
-      else if (direccionActual === "L") carrito.style.transform = "rotate(-90deg)";
-    }
-
-    function moverPaso(direccionMovimiento) {
+    function moverPaso(sentido) {
       const pistaWidth = pista.clientWidth;
       const pistaHeight = pista.clientHeight;
       const carritoWidth = carrito.clientWidth;
       const carritoHeight = carrito.clientHeight;
 
-      let dx = 0, dy = 0;
-      if (direccionActual === "U") dy = -1;
-      else if (direccionActual === "D") dy = 1;
-      else if (direccionActual === "L") dx = -1;
-      else if (direccionActual === "R") dx = 1;
+      const rad = angulo * (Math.PI / 180);
+      let dx = Math.round(Math.cos(rad));
+      let dy = Math.round(Math.sin(rad));
 
-      if (direccionMovimiento === "D") {
+      if (sentido === "D") {
         dx *= -1;
         dy *= -1;
       }
@@ -125,7 +114,6 @@
     }
 
     colocarMoneda();
-    actualizarRotacionVisual();
 
     setInterval(() => {
       fetch("https://hci-car-remote.onrender.com")
