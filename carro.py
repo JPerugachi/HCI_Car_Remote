@@ -9,8 +9,7 @@ def handle_cmd():
     cmd = request.args.get('cmd')
     if cmd:
         last_cmd = cmd
-        return "ok"
-    return last_cmd
+    return last_cmd  # ✅ Devuelve el último comando, no "ok"
 
 @app.route('/<path:filename>')
 def static_files(filename):

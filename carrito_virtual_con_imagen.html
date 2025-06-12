@@ -26,28 +26,28 @@
   <div id="pista">
     <img id="carrito" src="CARRITO.png" alt="Carrito">
   </div>
+<script>
+  let carrito = document.getElementById("carrito");
+  let x = 200;
+  let y = 200;
 
-  <script>
-    let carrito = document.getElementById("carrito");
-    let x = 200;
-    let y = 200;
+  function moverCarrito(direccion) {
+    if (direccion === "U") y -= 10;
+    else if (direccion === "D") y += 10;
+    else if (direccion === "L") x -= 10;
+    else if (direccion === "R") x += 10;
 
-    function moverCarrito(direccion) {
-      if (direccion === "U") y -= 10;
-      else if (direccion === "D") y += 10;
-      else if (direccion === "L") x -= 10;
-      else if (direccion === "R") x += 10;
+    carrito.style.top = y + "px";
+    carrito.style.left = x + "px";
+  }
 
-      carrito.style.top = y + "px";
-      carrito.style.left = x + "px";
-    }
+  setInterval(() => {
+    fetch("https://hci-car-remote.onrender.com")  // ✅ esta es la URL correcta
+      .then(response => response.text())
+      .then(cmd => moverCarrito(cmd.trim()))
+      .catch(err => console.log("Sin conexión al servidor"));
+  }, 300);
+</script>
 
-    setInterval(() => {
-      fetch("https://hci-car-remote.onrender.com/carrito_virtual_con_imagen.html")
-        .then(response => response.text())
-        .then(cmd => moverCarrito(cmd.trim()))
-        .catch(err => console.log("Sin conexión al servidor"));
-    }, 300);
-  </script>
 </body>
 </html>
