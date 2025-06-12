@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -133,6 +132,7 @@
         .then(response => response.text())
         .then(cmd => {
           cmd = cmd.trim();
+          if (!cmd) return;  // 🛑 No hacer nada si no hay comando
           if (cmd === "L" || cmd === "R") rotar(cmd);
           else if (cmd === "U" || cmd === "D") moverPaso(cmd);
         })
