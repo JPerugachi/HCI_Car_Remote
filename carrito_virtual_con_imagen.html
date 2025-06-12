@@ -96,16 +96,25 @@
       else if (direccionActual === "R") carrito.style.transform = "rotate(0deg)";
     }
 
-    function avanzar() {
+    function moverPaso(direccionMovimiento) {
       const pistaWidth = pista.clientWidth;
       const pistaHeight = pista.clientHeight;
       const carritoWidth = carrito.clientWidth;
       const carritoHeight = carrito.clientHeight;
 
-      if (direccionActual === "U") y -= paso;
-      else if (direccionActual === "D") y += paso;
-      else if (direccionActual === "L") x -= paso;
-      else if (direccionActual === "R") x += paso;
+      let dx = 0, dy = 0;
+      if (direccionActual === "U") dy = -1;
+      else if (direccionActual === "D") dy = 1;
+      else if (direccionActual === "L") dx = -1;
+      else if (direccionActual === "R") dx = 1;
+
+      if (direccionMovimiento === "D") {
+        dx *= -1;
+        dy *= -1;
+      }
+
+      x += dx * paso;
+      y += dy * paso;
 
       x = Math.max(0, Math.min(x, pistaWidth - carritoWidth));
       y = Math.max(0, Math.min(y, pistaHeight - carritoHeight));
@@ -125,7 +134,7 @@
         .then(cmd => {
           cmd = cmd.trim();
           if (cmd === "L" || cmd === "R") rotar(cmd);
-          else if (cmd === "S") avanzar();  // S = step forward
+          else if (cmd === "U" || cmd === "D") moverPaso(cmd);
         })
         .catch(err => console.log("Sin conexión al servidor"));
     }, 300);
