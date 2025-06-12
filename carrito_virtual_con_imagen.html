@@ -6,11 +6,9 @@
   <style>
     #carrito {
       position: absolute;
-      top: 200px;
-      left: 200px;
       width: 50px;
       height: 100px;
-      transition: transform 0.2s ease-in-out;
+      transition: transform 0.5s ease-in-out;
     }
     #moneda {
       position: absolute;
@@ -20,8 +18,8 @@
     #pista {
       position: relative;
       width: 550px;
-      height: 270px;
-      border: 1px solid #000000;
+      height: 300px;
+      border: 2px solid #000000;
       margin: 40px auto;
       background-color: #f0f0f0;
     }
@@ -56,11 +54,11 @@
     const mensaje = document.getElementById("mensaje");
 
     let puntos = 0;
-    let x = 200;
-    let y = 200;
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
+
+    let x, y;
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -69,6 +67,14 @@
       const randY = Math.floor(Math.random() * maxY);
       moneda.style.left = randX + "px";
       moneda.style.top = randY + "px";
+    }
+
+    function posicionInicial() {
+      x = (pista.clientWidth - carrito.clientWidth) / 2;
+      y = (pista.clientHeight - carrito.clientHeight) / 2;
+      carrito.style.left = x + "px";
+      carrito.style.top = y + "px";
+      carrito.style.transform = "rotate(0deg)";
     }
 
     function detectarColisionMoneda() {
@@ -96,19 +102,10 @@
 
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
-
-      // reiniciar posición y orientación
-      x = 200;
-      y = 200;
       angulo = 0;
-      carrito.style.left = x + "px";
-      carrito.style.top = y + "px";
-      carrito.style.transform = "rotate(0deg)";
+      posicionInicial();
 
-      // esperar 0.5 segundos antes de reactivar el juego
-      setTimeout(() => {
-        juegoActivo = true;
-      }, 500);
+      setTimeout(() => juegoActivo = true, 500);
     }
 
     function rotar(direccion) {
@@ -128,7 +125,7 @@
 
       const rad = angulo * Math.PI / 180;
       let dx = Math.round(Math.sin(rad));
-      let dy = -Math.round(Math.cos(rad)); // capó hacia arriba por defecto
+      let dy = -Math.round(Math.cos(rad));
 
       if (sentido === "D") {
         dx *= -1;
@@ -154,19 +151,46 @@
       detectarColisionMoneda();
     }
 
+    // Setup inicial
+    posicionInicial();
     colocarMoneda();
 
-    setInterval(() => {
-      fetch("https://hci-car-remote.onrender.com")
-        .then(r => r.text())
-        .then(cmd => {
-          if (!cmd || !juegoActivo) return;
-          cmd = cmd.trim();
-          if (cmd === "L" || cmd === "R") rotar(cmd);
-          else if (cmd === "U" || cmd === "D") moverPaso(cmd);
-        })
-        .catch(() => {});
-    }, 300);
+    // Control de comandos desde Flask
+   setInterval(() => {
+  fetch("https://hci-car-remote.onrender.com")
+    .then(r => r.text())
+    .then(cmd => {
+      cmd = cmd.trim();
+      if (!cmd) return;
+
+      if (!juegoActivo) {
+        juegoActivo = true; // ✅ Reactivar solo cuando llegue un nuevo comando
+      }
+
+      if (cmd === "L" || cmd === "R") rotar(cmd);
+      else if (cmd === "U" || cmd === "D") moverPaso(cmd);
+    })
+    .catch(() => {});
+}, 300);
+    // Control de comandos desde el teclado
+    document.addEventListener("keydown", (event) => {
+      if (!juegoActivo) return;
+
+      switch (event.key) {
+        case "ArrowLeft":
+          rotar("L");
+          break;
+        case "ArrowRight":
+          rotar("R");
+          break;
+        case "ArrowUp":
+          moverPaso("U");
+          break;
+        case "ArrowDown":
+          moverPaso("D");
+          break;
+      }
+    });
   </script>
 </body>
 </html>
