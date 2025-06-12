@@ -10,7 +10,7 @@
       left: 200px;
       width: 50px;
       height: 100px;
-      transition: transform 0.5s ease-in-out;
+      transition: transform 0.2s ease-in-out;
     }
     #moneda {
       position: absolute;
@@ -20,8 +20,8 @@
     #pista {
       position: relative;
       width: 550px;
-      height: 300px;
-      border: 2px solid #000000;
+      height: 270px;
+      border: 1px solid #000000;
       margin: 40px auto;
       background-color: #f0f0f0;
     }
@@ -92,8 +92,23 @@
     function perderJuego() {
       juegoActivo = false;
       mensaje.style.display = "block";
+      setTimeout(() => mensaje.style.display = "none", 2000);
+
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
+
+      // reiniciar posición y orientación
+      x = 200;
+      y = 200;
+      angulo = 0;
+      carrito.style.left = x + "px";
+      carrito.style.top = y + "px";
+      carrito.style.transform = "rotate(0deg)";
+
+      // esperar 0.5 segundos antes de reactivar el juego
+      setTimeout(() => {
+        juegoActivo = true;
+      }, 500);
     }
 
     function rotar(direccion) {
@@ -113,7 +128,7 @@
 
       const rad = angulo * Math.PI / 180;
       let dx = Math.round(Math.sin(rad));
-      let dy = -Math.round(Math.cos(rad)); // ← ahora el capó apunta hacia arriba
+      let dy = -Math.round(Math.cos(rad)); // capó hacia arriba por defecto
 
       if (sentido === "D") {
         dx *= -1;
@@ -123,7 +138,6 @@
       const nuevoX = x + dx * paso;
       const nuevoY = y + dy * paso;
 
-      // Detectar choque con bordes
       if (
         nuevoX < 0 || nuevoX > pistaWidth - carritoWidth ||
         nuevoY < 0 || nuevoY > pistaHeight - carritoHeight
