@@ -57,8 +57,12 @@
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-
+    let esperarComandoNuevo = false;
+    let ultimoComando = "";
     let x, y;
+
+    let velocidad = 300;
+    let loopInterval;
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -67,6 +71,12 @@
       const randY = Math.floor(Math.random() * maxY);
       moneda.style.left = randX + "px";
       moneda.style.top = randY + "px";
+
+      // Acelerar el juego progresivamente
+      if (velocidad > 100) {
+        velocidad -= 20;
+        iniciarLoopComandos();
+      }
     }
 
     function posicionInicial() {
@@ -97,15 +107,16 @@
 
     function perderJuego() {
       juegoActivo = false;
+      esperarComandoNuevo = true;
       mensaje.style.display = "block";
+
       setTimeout(() => mensaje.style.display = "none", 2000);
 
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
       angulo = 0;
+      velocidad = 300;
       posicionInicial();
-
-      setTimeout(() => juegoActivo = true, 500);
     }
 
     function rotar(direccion) {
@@ -151,46 +162,33 @@
       detectarColisionMoneda();
     }
 
-    // Setup inicial
+    function iniciarLoopComandos() {
+      if (loopInterval) clearInterval(loopInterval);
+
+      loopInterval = setInterval(() => {
+        fetch("https://hci-car-remote.onrender.com")
+          .then(r => r.text())
+          .then(cmd => {
+            cmd = cmd.trim();
+            if (!cmd) return;
+
+            if (esperarComandoNuevo && cmd === ultimoComando) return;
+            esperarComandoNuevo = false;
+            ultimoComando = cmd;
+
+            if (!juegoActivo) juegoActivo = true;
+
+            if (cmd === "L" || cmd === "R") rotar(cmd);
+            else if (cmd === "U" || cmd === "D") moverPaso(cmd);
+          })
+          .catch(() => {});
+      }, velocidad);
+    }
+
+    // Inicialización
     posicionInicial();
     colocarMoneda();
-
-    // Control de comandos desde Flask
-   setInterval(() => {
-  fetch("https://hci-car-remote.onrender.com")
-    .then(r => r.text())
-    .then(cmd => {
-      cmd = cmd.trim();
-      if (!cmd) return;
-
-      if (!juegoActivo) {
-        juegoActivo = true; // ✅ Reactivar solo cuando llegue un nuevo comando
-      }
-
-      if (cmd === "L" || cmd === "R") rotar(cmd);
-      else if (cmd === "U" || cmd === "D") moverPaso(cmd);
-    })
-    .catch(() => {});
-}, 300);
-    // Control de comandos desde el teclado
-    document.addEventListener("keydown", (event) => {
-      if (!juegoActivo) return;
-
-      switch (event.key) {
-        case "ArrowLeft":
-          rotar("L");
-          break;
-        case "ArrowRight":
-          rotar("R");
-          break;
-        case "ArrowUp":
-          moverPaso("U");
-          break;
-        case "ArrowDown":
-          moverPaso("D");
-          break;
-      }
-    });
+    iniciarLoopComandos();
   </script>
 </body>
 </html>
