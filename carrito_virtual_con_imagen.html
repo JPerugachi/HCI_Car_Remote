@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Carrito Virtual</title>
+  <title>Carrito Snake</title>
   <style>
     #carrito {
       position: absolute;
@@ -34,7 +34,7 @@
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">Carrito Virtual</h2>
+  <h2 style="text-align:center;">Carrito Snake</h2>
   <div id="puntos">Puntos: 0</div>
   <div id="pista">
     <img id="carrito" src="CARRITO.png" alt="Carrito">
@@ -49,6 +49,7 @@
     let x = 200;
     let y = 200;
     const paso = 10;
+    let direccionActual = "U"; // U, D, L, R
 
     function colocarMoneda() {
       const maxX = pista.clientWidth - 30;
@@ -77,25 +78,34 @@
       }
     }
 
-    function moverCarrito(direccion) {
+    function rotar(direccion) {
+      const rotaciones = {
+        "U": { "L": "L", "R": "R" },
+        "D": { "L": "R", "R": "L" },
+        "L": { "L": "D", "R": "U" },
+        "R": { "L": "U", "R": "D" }
+      };
+      direccionActual = rotaciones[direccionActual][direccion];
+      actualizarRotacionVisual();
+    }
+
+    function actualizarRotacionVisual() {
+      if (direccionActual === "U") carrito.style.transform = "rotate(-90deg)";
+      else if (direccionActual === "D") carrito.style.transform = "rotate(90deg)";
+      else if (direccionActual === "L") carrito.style.transform = "rotate(180deg)";
+      else if (direccionActual === "R") carrito.style.transform = "rotate(0deg)";
+    }
+
+    function avanzar() {
       const pistaWidth = pista.clientWidth;
       const pistaHeight = pista.clientHeight;
       const carritoWidth = carrito.clientWidth;
       const carritoHeight = carrito.clientHeight;
 
-      if (direccion === "U") {
-        y -= paso;
-        carrito.style.transform = "rotate(-90deg)";
-      } else if (direccion === "D") {
-        y += paso;
-        carrito.style.transform = "rotate(90deg)";
-      } else if (direccion === "L") {
-        x -= paso;
-        carrito.style.transform = "rotate(180deg)";
-      } else if (direccion === "R") {
-        x += paso;
-        carrito.style.transform = "rotate(0deg)";
-      }
+      if (direccionActual === "U") y -= paso;
+      else if (direccionActual === "D") y += paso;
+      else if (direccionActual === "L") x -= paso;
+      else if (direccionActual === "R") x += paso;
 
       x = Math.max(0, Math.min(x, pistaWidth - carritoWidth));
       y = Math.max(0, Math.min(y, pistaHeight - carritoHeight));
@@ -107,11 +117,16 @@
     }
 
     colocarMoneda();
+    actualizarRotacionVisual();
 
     setInterval(() => {
       fetch("https://hci-car-remote.onrender.com")
         .then(response => response.text())
-        .then(cmd => moverCarrito(cmd.trim()))
+        .then(cmd => {
+          cmd = cmd.trim();
+          if (cmd === "L" || cmd === "R") rotar(cmd);
+          else if (cmd === "S") avanzar();  // S = step forward
+        })
         .catch(err => console.log("Sin conexión al servidor"));
     }, 300);
   </script>
