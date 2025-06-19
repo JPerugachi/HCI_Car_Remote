@@ -165,7 +165,7 @@
     function enviarDatosAGoogleSheets() {
       let promedio = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 5;
 
-      fetch("TU_WEBhttps://script.google.com/macros/s/AKfycbxjsQ8TMQFsFBpZB7uTakViLTEEUebmcaw33BxbspOSwWEx6g7WTx7y0vAlmvghxltN-w/exec_APP_URL", {
+      fetch("https://script.google.com/macros/s/AKfycbxjsQ8TMQFsFBpZB7uTakViLTEEUebmcaw33BxbspOSwWEx6g7WTx7y0vAlmvghxltN-w/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -186,9 +186,13 @@
           .then(cmd => {
             if (!cmd) return;
             if (esperandoReinicio) {
-              esperandoReinicio = false;
-              juegoActivo = true;
-            }
+  if (cmd === "U" || cmd === "D" || cmd === "L" || cmd === "R") {
+    esperandoReinicio = false;
+    juegoActivo = true;
+  } else {
+    return;
+  }
+}
             if (cmd === "L" || cmd === "R") rotar(cmd);
             else if (cmd === "U" || cmd === "D") moverPaso(cmd);
           });
