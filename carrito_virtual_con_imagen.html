@@ -28,11 +28,17 @@
       color: #2c3e50;
     }
     #mensaje {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: bold;
       color: #e74c3c;
       margin: 12px;
       display: none;
+      animation: zoomInOut 1s ease-in-out 2;
+    }
+    @keyframes zoomInOut {
+      0% { transform: scale(1); opacity: 0.1; }
+      50% { transform: scale(1.5); opacity: 1; }
+      100% { transform: scale(1); opacity: 0; }
     }
     #pista {
       position: relative;
@@ -63,7 +69,7 @@
     <h2>Carrito Snake</h2>
     <div id="puntos">Puntos: 0</div>
   </div>
-  <div id="mensaje">¡Chocaste!</div>
+  <div id="mensaje">💥 ¡Chocaste! 💥</div>
   <div id="pista">
     <img id="carrito" src="carro.png" alt="Carrito">
     <img id="moneda" src="moneda.png" alt="Moneda">
@@ -81,6 +87,7 @@
     let tiempoMonedaAnterior = Date.now();
     let tiempos = [];
     let juegoActivo = true;
+    let esperandoReinicio = false;
 
     function colocarMoneda() {
       const randX = Math.floor(Math.random() * (pista.clientWidth - 30));
@@ -100,11 +107,14 @@
 
     function perderJuego() {
       mensaje.style.display = "block";
+      mensaje.style.animation = "zoomInOut 1s ease-in-out 2";
       setTimeout(() => mensaje.style.display = "none", 2000);
       colisionesTotales++;
       puntos = 0;
       velocidad = 300;
       juegoActivo = false;
+      esperandoReinicio = true;
+      document.getElementById("puntos").textContent = "Puntos: 0";
       posicionInicial();
     }
 
@@ -155,7 +165,7 @@
     function enviarDatosAGoogleSheets() {
       let promedio = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 5;
 
-      fetch("TU_WEB_APP_Uhttps://script.google.com/macros/s/AKfycbxjsQ8TMQFsFBpZB7uTakViLTEEUebmcaw33BxbspOSwWEx6g7WTx7y0vAlmvghxltN-w/execRL", { // Reemplaza con tu URL de Apps Script
+      fetch("TU_WEB_APP_URL", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -175,6 +185,10 @@
           .then(r => r.text())
           .then(cmd => {
             if (!cmd) return;
+            if (esperandoReinicio) {
+              esperandoReinicio = false;
+              juegoActivo = true;
+            }
             if (cmd === "L" || cmd === "R") rotar(cmd);
             else if (cmd === "U" || cmd === "D") moverPaso(cmd);
           });
