@@ -80,6 +80,7 @@
     let loopInterval;
     let tiempoMonedaAnterior = Date.now();
     let tiempos = [];
+    let juegoActivo = true;
 
     function colocarMoneda() {
       const randX = Math.floor(Math.random() * (pista.clientWidth - 30));
@@ -94,6 +95,7 @@
       carrito.style.left = x + "px";
       carrito.style.top = y + "px";
       carrito.style.transform = "rotate(0deg)";
+      angulo = 0;
     }
 
     function perderJuego() {
@@ -102,16 +104,19 @@
       colisionesTotales++;
       puntos = 0;
       velocidad = 300;
+      juegoActivo = false;
       posicionInicial();
     }
 
     function rotar(dir) {
+      if (!juegoActivo) return;
       girosTotales++;
       angulo += (dir === "R") ? 90 : -90;
       carrito.style.transform = `rotate(${angulo}deg)`;
     }
 
     function moverPaso(sentido) {
+      if (!juegoActivo) return;
       const rad = angulo * Math.PI / 180;
       let dx = Math.round(Math.sin(rad)), dy = -Math.round(Math.cos(rad));
       if (sentido === "D") { dx *= -1; dy *= -1; }
@@ -142,15 +147,15 @@
         tiempoMonedaAnterior = ahora;
         tiempos.push(tiempo);
         colocarMoneda();
-        enviarDatosAModelo();
+        enviarDatosAGoogleSheets();
         document.getElementById("puntos").textContent = "Puntos: " + puntos;
       }
     }
 
-    function enviarDatosAModelo() {
+    function enviarDatosAGoogleSheets() {
       let promedio = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 5;
 
-      fetch("/clasificar", {
+      fetch("TU_WEB_APP_Uhttps://script.google.com/macros/s/AKfycbxjsQ8TMQFsFBpZB7uTakViLTEEUebmcaw33BxbspOSwWEx6g7WTx7y0vAlmvghxltN-w/execRL", { // Reemplaza con tu URL de Apps Script
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,15 +164,8 @@
           colisiones: colisionesTotales
         })
       })
-      .then(r => r.json())
-      .then(data => ajustarModo(data.tipo));
-    }
-
-    function ajustarModo(tipo) {
-      if (tipo === "agresivo") velocidad = 150;
-      else if (tipo === "preciso") velocidad = 200;
-      else velocidad = 300;
-      iniciarLoop();
+      .then(r => console.log("Enviado a Google Sheets"))
+      .catch(e => console.error("Error al enviar datos:", e));
     }
 
     function iniciarLoop() {
