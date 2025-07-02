@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import joblib
 import numpy as np
 from flask_cors import CORS
@@ -12,7 +12,8 @@ modelo = joblib.load("modelo_carrito.pkl")
 
 @app.route("/")
 def home():
-    return "Servicio funcionando correctamente"
+     return render_template("carrito_virtual_con_imagen.html")
+
 
 @app.route('/predecir', methods=['POST'])
 def predecir():
