@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Carrito ML Adaptativo</title>
+  <title>Carrito Snake</title>
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #02d0ffff;
+      background: #e6ecf0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -19,6 +19,7 @@
       gap: 50px;
       margin-top: 30px;
     }
+
     .header h2, .header #puntos {
       margin: 0;
     }
@@ -33,18 +34,13 @@
       color: #e74c3c;
       margin: 12px;
       display: none;
-      animation: zoomInOut 1s ease-in-out 2;
     }
-    @keyframes zoomInOut {
-      0% { transform: scale(1); opacity: 0.1; }
-      50% { transform: scale(1.5); opacity: 1; }
-      100% { transform: scale(1); opacity: 0; }
-    }
+
     #pista {
       position: relative;
       width: 550px;
       height: 300px;
-      background: url("pista.png") center/cover no-repeat;
+      background: url("pista.png") center/cover no-repeat; /* FONDO */
       border: 4px solid #34495e;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
