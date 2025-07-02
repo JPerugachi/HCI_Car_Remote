@@ -1,16 +1,13 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 import joblib
 import numpy as np
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Permite que tu HTML pueda hacer fetch al backend
 
+# Cargar el modelo
 modelo = joblib.load("modelo_carrito.pkl")
-
-@app.route('/')
-def index():
-    return render_template('carrito_virtual_con_imagen.html')  # renderizar el juego
 
 @app.route('/predecir', methods=['POST'])
 def predecir():
