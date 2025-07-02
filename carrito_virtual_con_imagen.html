@@ -234,7 +234,7 @@
       const promedio = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 5;
       const tiempoTotalRonda = (Date.now() - inicioJuego) / 1000;
 
-      fetch("http://localhost:5000/predecir", {
+      fetch("https://carrito-ml.onrender.com/predecir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
