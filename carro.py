@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import joblib
 import numpy as np
 from flask_cors import CORS
@@ -6,8 +6,11 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Cargar el modelo entrenado
 modelo = joblib.load("modelo_carrito.pkl")
+
+@app.route('/')
+def index():
+    return render_template('carrito_virtual_con_imagen.html')  # renderizar el juego
 
 @app.route('/predecir', methods=['POST'])
 def predecir():
@@ -17,7 +20,7 @@ def predecir():
     colisiones = datos.get("colisiones", 0)
 
     entrada = np.array([[tiempo, giros, colisiones]])
-    prediccion = modelo.predict(entrada)[0]  # 'novato', 'intermedio', 'experto'
+    prediccion = modelo.predict(entrada)[0]
 
     return jsonify({"nivel": prediccion})
 
