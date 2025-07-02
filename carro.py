@@ -10,11 +10,17 @@ CORS(app)  # Permite que tu HTML pueda hacer fetch al backend
 modelo = joblib.load("modelo_carrito.pkl")
 
 
-@app.route("/")
+# Ruta principal compatible con MIT App Inventor
+@app.route("/", methods=["GET"])
 def home():
-     return render_template("carrito_virtual_con_imagen.html")
+    cmd = request.args.get("cmd")
+    if cmd:
+        print(f"Comando recibido desde MIT: {cmd}")
+        return f"Comando recibido: {cmd}", 200
+    return "Servidor activo", 200
 
 
+# Ruta para predicción ML
 @app.route('/predecir', methods=['POST'])
 def predecir():
     datos = request.get_json()
