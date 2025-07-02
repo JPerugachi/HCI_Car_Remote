@@ -9,6 +9,11 @@ CORS(app)  # Permite que tu HTML pueda hacer fetch al backend
 # Cargar el modelo
 modelo = joblib.load("modelo_carrito.pkl")
 
+
+@app.route("/")
+def home():
+    return "Servicio funcionando correctamente"
+
 @app.route('/predecir', methods=['POST'])
 def predecir():
     datos = request.get_json()
