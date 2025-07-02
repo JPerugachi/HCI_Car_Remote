@@ -2,3 +2,6 @@ flask
 joblib
 flask-cors
 numpy
+scikit-learn
+scipy
+pandas
