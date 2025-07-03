@@ -155,7 +155,7 @@
       x += dx * paso;
       y += dy * paso;
       if (x < 0 || x > pista.clientWidth - carrito.clientWidth || y < 0 || y > pista.clientHeight - carrito.clientHeight) {
-        moverActivo = false;
+        movimientoActivo = false;
         perderJuego();
       } else {
         carrito.style.left = x + "px";
