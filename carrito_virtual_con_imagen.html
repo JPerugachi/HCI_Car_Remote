@@ -88,34 +88,34 @@
   <div id="nivelML">Nivel: --</div>
   <div id="timerBar"><div id="timerProgress"></div></div>
   <div id="pista">
-    <img id="carrito" src="carro.png" alt="Carrito">
-    <img id="moneda" src="moneda.png" alt="Moneda">
+    <img id="carrito" src="static/carro.png" alt="Carrito">
+    <img id="moneda" src="static/moneda.png" alt="Moneda">
   </div>
 
   <script>
-    const carrito = document.getElementById("carrito");
-    const moneda = document.getElementById("moneda");
-    const pista = document.getElementById("pista");
-    const mensaje = document.getElementById("mensaje");
-    const nivelML = document.getElementById("nivelML");
+    const carrito     = document.getElementById("carrito");
+    const moneda      = document.getElementById("moneda");
+    const pista       = document.getElementById("pista");
+    const mensaje     = document.getElementById("mensaje");
+    const nivelML     = document.getElementById("nivelML");
     const timerProgress = document.getElementById("timerProgress");
 
-    let puntos = 0;
-    const paso = 10;
-    let angulo = 0;
+    let puntos         = 0;
+    const paso         = 10;
+    let angulo         = 0;
     let direccionActual = "U";
 
     let x, y;
-    let velocidad = 300;
+    let velocidad       = 300;
     let movimientoActivo = false;
 
-    let colisiones = 0;
-    let giros = 0;
-    let tiempoAnterior = Date.now();
-    let inicioJuego = Date.now();
-    let tiempos = [];
-    let tiempoMaximo = 30;
-    let tiempoRestante = tiempoMaximo;
+    let colisiones      = 0;
+    let giros           = 0;
+    let tiempoAnterior  = Date.now();
+    let inicioJuego     = Date.now();
+    let tiempos         = [];
+    let tiempoMaximo    = 30;
+    let tiempoRestante  = tiempoMaximo;
     let intervaloTimer;
 
     function colocarMoneda() {
@@ -156,10 +156,10 @@
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
       carrito.style.left = x + "px";
-      carrito.style.top = y + "px";
-      angulo = 0;
+      carrito.style.top  = y + "px";
+      angulo             = 0;
       carrito.style.transform = `rotate(${angulo}deg)`;
-      direccionActual = "U";
+      direccionActual    = "U";
     }
 
     function detectarColisionMoneda() {
@@ -178,22 +178,22 @@
     }
 
     function detectarColisionBorde() {
-      const pistaWidth = pista.clientWidth;
-      const pistaHeight = pista.clientHeight;
-      const carritoWidth = carrito.clientWidth;
-      const carritoHeight = carrito.clientHeight;
-      return x < 0 || x > pistaWidth - carritoWidth || y < 0 || y > pistaHeight - carritoHeight;
+      const pistaW = pista.clientWidth;
+      const pistaH = pista.clientHeight;
+      const carW   = carrito.clientWidth;
+      const carH   = carrito.clientHeight;
+      return x < 0 || x > pistaW - carW || y < 0 || y > pistaH - carH;
     }
 
     function rotar(direccion) {
       if (!movimientoActivo) return;
       const dirs = ["U", "R", "D", "L"];
-      let index = dirs.indexOf(direccionActual);
+      let idx = dirs.indexOf(direccionActual);
       if (direccion === "R") {
-        direccionActual = dirs[(index + 1) % 4];
+        direccionActual = dirs[(idx + 1) % 4];
         angulo += 90;
       } else if (direccion === "L") {
-        direccionActual = dirs[(index + 3) % 4];
+        direccionActual = dirs[(idx + 3) % 4];
         angulo -= 90;
       }
       carrito.style.transform = `rotate(${angulo}deg)`;
@@ -202,13 +202,11 @@
 
     function moverPaso() {
       if (!movimientoActivo) return;
-
       let dx = 0, dy = 0;
       if (direccionActual === "U") dy = -1;
-      else if (direccionActual === "D") dy = 1;
+      else if (direccionActual === "D") dy =  1;
       else if (direccionActual === "L") dx = -1;
-      else if (direccionActual === "R") dx = 1;
-
+      else if (direccionActual === "R") dx =  1;
       x += dx * paso;
       y += dy * paso;
 
@@ -221,7 +219,7 @@
         posicionInicial();
       } else {
         carrito.style.left = x + "px";
-        carrito.style.top = y + "px";
+        carrito.style.top  = y + "px";
       }
 
       detectarColisionMoneda();
@@ -230,8 +228,10 @@
     function finalizarJuego() {
       clearInterval(intervaloTimer);
       movimientoActivo = false;
-      const promedio = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 5;
-      const tiempoTotalRonda = (Date.now() - inicioJuego) / 1000;
+      const promedio = tiempos.length
+        ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length
+        : 5;
+      const tiempoTotal = (Date.now() - inicioJuego) / 1000;
 
       fetch("https://hci-car-remote.onrender.com/predecir", {
         method: "POST",
@@ -241,7 +241,7 @@
           giros: giros,
           colisiones: colisiones,
           puntos: puntos,
-          tiempo_total: tiempoTotalRonda
+          tiempo_total: tiempoTotal
         })
       })
       .then(res => res.json())
@@ -253,49 +253,61 @@
     }
 
     function reiniciarJuego() {
-      puntos = 0;
-      colisiones = 0;
-      giros = 0;
-      tiempos = [];
+      puntos         = 0;
+      colisiones     = 0;
+      giros          = 0;
+      tiempos        = [];
       movimientoActivo = false;
       document.getElementById("puntos").textContent = "Puntos: 0";
       posicionInicial();
     }
 
-    document.addEventListener("keydown", (e) => {
-      const tecla = e.key.toLowerCase();
-
-      if (!movimientoActivo && (tecla === "arrowup" || tecla === "w")) {
-        movimientoActivo = true;
-        inicioJuego = Date.now();
-        tiempoAnterior = Date.now();
-        iniciarTimer();
-      }
-
-      if (!movimientoActivo) return;
-
-      if (tecla === "arrowleft" || tecla === "a") rotar("L");
-      else if (tecla === "arrowright" || tecla === "d") rotar("R");
-    });
-
+    // Arranca el bucle y coloca moneda inicial
     setInterval(moverPaso, 300);
     posicionInicial();
     colocarMoneda();
 
-    // Ejecutar comando desde la URL si viene desde MIT App
+    // ————————————————
+    // Ahora: solo leo el cmd de la URL y actúo directamente
     window.addEventListener("load", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const comando = urlParams.get("cmd");
-      if (comando) {
-        movimientoActivo = true;
-        iniciarTimer();
-        inicioJuego = Date.now();
-        tiempoAnterior = Date.now();
-        const evento = new KeyboardEvent("keydown", { key: comando.toLowerCase() });
-        document.dispatchEvent(evento);
+      const params = new URLSearchParams(window.location.search);
+      const cmd    = params.get("cmd");
+      if (!cmd) return;
+      const c = cmd.toUpperCase();
+
+      // Avanzar (F o U)
+      if (c === "F" || c === "U") {
+        if (!movimientoActivo) {
+          movimientoActivo = true;
+          inicioJuego      = Date.now();
+          tiempoAnterior   = Date.now();
+          iniciarTimer();
+        }
+        direccionActual = "U";
+        angulo          =   0;
+        carrito.style.transform = `rotate(${angulo}deg)`;
+      }
+      // Izquierda
+      else if (c === "L") {
+        if (movimientoActivo) rotar("L");
+      }
+      // Derecha
+      else if (c === "R") {
+        if (movimientoActivo) rotar("R");
+      }
+      // Atrás (D)
+      else if (c === "D") {
+        if (!movimientoActivo) {
+          movimientoActivo = true;
+          inicioJuego      = Date.now();
+          tiempoAnterior   = Date.now();
+          iniciarTimer();
+        }
+        direccionActual = "D";
+        angulo          = 180;
+        carrito.style.transform = `rotate(${angulo}deg)`;
       }
     });
-
   </script>
 </body>
 </html>
