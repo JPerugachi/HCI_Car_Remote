@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Carrito Snake</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -20,30 +21,52 @@
       margin-top: 30px;
     }
     .header h2 {
+      font-family: 'Orbitron', sans-serif;
       font-size: 28px;
       color: #002f4b;
+      text-shadow: 1px 1px 2px #ffffff90;
       margin: 0;
     }
     #puntos {
+      font-family: 'Orbitron', sans-serif;
       font-size: 22px;
       font-weight: bold;
       color: #002f4b;
+      text-shadow: 1px 1px 1px #ffffff80;
     }
     #mensaje {
       font-size: 22px;
       font-weight: bold;
+      font-family: 'Orbitron', sans-serif;
       color: #ffffff;
       background: #e74c3c;
       padding: 8px 20px;
       border-radius: 10px;
       margin: 12px;
       display: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
     #nivelML {
+      font-family: 'Orbitron', sans-serif;
       font-size: 20px;
-      font-weight: bold;
       color: #002f4b;
       margin-bottom: 10px;
+      text-shadow: 1px 1px 1px #ffffff80;
+    }
+    #timerBar {
+      width: 100%;
+      max-width: 600px;
+      height: 15px;
+      background: #ccc;
+      margin: 10px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #timerProgress {
+      height: 100%;
+      width: 100%;
+      background-color: #4caf50;
+      transition: width 1s linear;
     }
     #pista {
       position: relative;
@@ -76,61 +99,88 @@
   </div>
   <div id="mensaje">¡Chocaste!</div>
   <div id="nivelML">Nivel ML: --</div>
+  <div id="timerBar"><div id="timerProgress"></div></div>
   <div id="pista">
     <img id="carrito" src="carro.png" alt="Carrito">
-    <img id="moneda"  src="moneda.png" alt="Moneda">
+    <img id="moneda" src="moneda.png" alt="Moneda">
   </div>
 
   <script>
-    // — Variables de juego
-    const carrito  = document.getElementById("carrito");
-    const moneda   = document.getElementById("moneda");
-    const pista    = document.getElementById("pista");
-    const mensaje  = document.getElementById("mensaje");
-    const nivelML  = document.getElementById("nivelML");
-    let puntos     = 0;
-    let angulo     = 0;
-    let juegoActivo        = true;
-    let ultimoComando      = "";
-    let esperarComandoNuevo = false;
+    // DOM references
+    const carrito = document.getElementById("carrito");
+    const moneda = document.getElementById("moneda");
+    const pista = document.getElementById("pista");
+    const mensaje = document.getElementById("mensaje");
+    const nivelML = document.getElementById("nivelML");
+    const timerProg = document.getElementById("timerProgress");
 
-    let x, y;
-    let velocidad   = 300;
+    // Game state
+    let puntos = 0;
+    const paso = 10;
+    let angulo = 0;
+    let juegoActivo = true;
+    let esperarComandoNuevo = false;
+    let ultimoComando = "";
+    let velocidad = 300;
     let loopInterval;
 
-    // — Métricas para ML
-    let giros        = 0;
-    let colisiones   = 0;
-    let inicioJuego  = Date.now();
+    // ML metrics
+    let giros = 0;
+    let colisiones = 0;
+    let inicioJuego = Date.now();
 
-    // — Posición inicial y moneda
+    // Timer
+    const tiempoMaximo = 30;
+    let tiempoRestante = tiempoMaximo;
+    let intervalTimer;
+
+    // Position initialization
+    let x, y;
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
-      carrito.style.left     = x + "px";
-      carrito.style.top      = y + "px";
+      carrito.style.left = x + "px";
+      carrito.style.top = y + "px";
       carrito.style.transform = "rotate(0deg)";
       angulo = 0;
+      movimientoActivo = false;
       inicioJuego = Date.now();
-      giros      = 0;
+      giros = 0;
       colisiones = 0;
+      // Restart timer
+      reiniciarTimer();
     }
 
+    // Timer functions
+    function actualizarBarra() {
+      timerProg.style.width = (tiempoRestante / tiempoMaximo * 100) + "%";
+    }
+    function refrescarTimer() {
+      tiempoRestante--;
+      actualizarBarra();
+      if (tiempoRestante <= 0) {
+        perderJuego(true);
+      }
+    }
+    function reiniciarTimer() {
+      clearInterval(intervalTimer);
+      tiempoRestante = tiempoMaximo;
+      actualizarBarra();
+      intervalTimer = setInterval(refrescarTimer, 1000);
+    }
+
+    // Place coin randomly
     function colocarMoneda() {
-      const maxX = pista.clientWidth  - moneda.clientWidth;
+      const maxX = pista.clientWidth - moneda.clientWidth;
       const maxY = pista.clientHeight - moneda.clientHeight;
-      moneda.style.left = Math.floor(Math.random()*maxX) + "px";
-      moneda.style.top  = Math.floor(Math.random()*maxY) + "px";
+      moneda.style.left = Math.floor(Math.random() * maxX) + "px";
+      moneda.style.top = Math.floor(Math.random() * maxY) + "px";
     }
 
-    // — Colisión moneda
     function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect();
       const rm = moneda.getBoundingClientRect();
-      const overlap = !(rc.right < rm.left ||
-                        rc.left  > rm.right ||
-                        rc.bottom < rm.top ||
-                        rc.top    > rm.bottom);
+      const overlap = !(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom);
       if (overlap) {
         puntos++;
         document.getElementById("puntos").textContent = "Puntos: " + puntos;
@@ -138,91 +188,80 @@
       }
     }
 
-    // — Perder (colisión contra borde)
-    function perderJuego() {
+    // Handle losing and ML prediction
+    function perderJuego(timeout = false) {
+      clearInterval(intervalTimer);
       if (!juegoActivo) return;
       juegoActivo = false;
-      colisiones++;
+      if (!timeout) colisiones++;
+      mensaje.textContent = timeout ? "¡Perdiste!" : "¡Chocaste!";
       mensaje.style.display = "block";
       setTimeout(() => mensaje.style.display = "none", 2000);
 
-      // — Llamada ML
-      const dur = (Date.now() - inicioJuego) / 1000;
+      // ML call
+      const duracion = (Date.now() - inicioJuego) / 1000;
       fetch("/predecir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tiempo: dur,
-          giros: giros,
-          colisiones: colisiones
-        })
+        body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
       })
-      .then(r=>r.json())
-      .then(d=>{
-        nivelML.textContent = "Nivel ML: " + d.nivel;
-      })
+      .then(res => res.json())
+      .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
       .catch(console.error);
 
-      // Reinicio
+      // Reset points and restart game loop
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
-      posicionInicial();
-      setTimeout(() => juegoActivo = true, 500); // espero un poco
+      setTimeout(() => {
+        juegoActivo = true;
+        posicionInicial();
+      }, 1000);
     }
 
-    // — Rotación
-    function rotar(dir) {
+    // Rotation
+    function rotar(direccion) {
       if (!juegoActivo) return;
-      if (dir === "R") angulo += 90;
-      if (dir === "L") angulo -= 90;
+      if (direccion === "R") angulo += 90;
+      if (direccion === "L") angulo -= 90;
       carrito.style.transform = `rotate(${angulo}deg)`;
       giros++;
     }
 
-    // — Movimiento por paso
+    // Single-step move
     function moverPaso(sentido) {
       if (!juegoActivo) return;
-      // convierto ángulo a vector
-      const rad = angulo * Math.PI/180;
+      const rad = angulo * Math.PI / 180;
       let dx = Math.round(Math.sin(rad));
       let dy = -Math.round(Math.cos(rad));
-      if (sentido==="D") { dx*=-1; dy*=-1; }
-
-      const nx = x + dx*10;
-      const ny = y + dy*10;
-
-      if (nx<0 || nx>pista.clientWidth - carrito.clientWidth ||
-          ny<0 || ny>pista.clientHeight - carrito.clientHeight) {
-        perderJuego();
-        return;
+      if (sentido === "D") { dx *= -1; dy *= -1; }
+      const nx = x + dx * paso;
+      const ny = y + dy * paso;
+      if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
+        perderJuego(false);
+      } else {
+        x = nx; y = ny;
+        carrito.style.left = x + "px";
+        carrito.style.top = y + "px";
+        detectarColisionMoneda();
       }
-      x = nx; y = ny;
-      carrito.style.left = x + "px";
-      carrito.style.top  = y + "px";
-      detectarColisionMoneda();
     }
 
-    // — Bucle de comandos (polling /)
+    // Command polling
     function iniciarLoopComandos() {
-      if (loopInterval) clearInterval(loopInterval);
-      loopInterval = setInterval(()=> {
+      setInterval(() => {
         fetch("/")
-          .then(r=>r.text())
-          .then(cmd=>{
+          .then(r => r.text())
+          .then(cmd => {
             cmd = cmd.trim();
             if (!cmd) return;
-            if (esperarComandoNuevo && cmd===ultimoComando) return;
-            esperarComandoNuevo = false;
-            ultimoComando = cmd;
-
-            if (cmd==="L"||cmd==="R") rotar(cmd);
-            else if (cmd==="U"||cmd==="D") moverPaso(cmd);
+            if (cmd === "L" || cmd === "R") rotar(cmd);
+            else if (cmd === "U" || cmd === "D") moverPaso(cmd);
           })
-          .catch(_=>{});
+          .catch(() => {});
       }, velocidad);
     }
 
-    // — Init
+    // Initialize game
     posicionInicial();
     colocarMoneda();
     iniciarLoopComandos();
