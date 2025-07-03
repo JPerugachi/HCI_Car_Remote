@@ -125,7 +125,6 @@
       const randY = Math.floor(Math.random() * maxY);
       moneda.style.left = randX + "px";
       moneda.style.top = randY + "px";
-
       tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
       actualizarBarra();
     }
@@ -288,21 +287,25 @@
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('cmd');
     }
-const comando = getParametroCmd();
-if (comando) {
-  const key = comando.toLowerCase();
 
-  if (!movimientoActivo && (key === "arrowup" || key === "w" || key === "u")) {
-    movimientoActivo = true;
-    inicioJuego = Date.now();
-    tiempoAnterior = Date.now();
-    iniciarTimer();
-  }
+    const comando = getParametroCmd();
+    if (comando) {
+      const key = comando.toLowerCase();
 
-  const evento = new KeyboardEvent('keydown', { key });
-  document.dispatchEvent(evento);
-}
+      if (!movimientoActivo) {
+        movimientoActivo = true;
+        inicioJuego = Date.now();
+        tiempoAnterior = Date.now();
+        iniciarTimer();
+      }
 
+      if (key === "l") rotar("L");
+      else if (key === "r") rotar("R");
+      else if (key === "u") direccionActual = "U";
+      else if (key === "d") direccionActual = "D";
+
+      moverPaso(); // Avanza un paso
+    }
 
   </script>
 </body>
