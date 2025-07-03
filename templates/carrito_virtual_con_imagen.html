@@ -4,17 +4,69 @@
   <meta charset="UTF-8">
   <title>Carrito Snake</title>
   <style>
-    body { margin:0; font-family:'Segoe UI',sans-serif; background:#02d0ff; display:flex; flex-direction:column; align-items:center; }
-    .header { display:flex; justify-content:center; align-items:center; gap:40px; margin-top:30px; }
-    .header h2 { font-size:28px; color:#002f4b; margin:0; }
-    #puntos { font-size:22px; font-weight:bold; color:#002f4b; }
-    #mensaje { font-size:22px; font-weight:bold; color:#fff; background:#e74c3c; padding:8px 20px; border-radius:10px; margin:12px; display:none; }
-    #nivelML { font-size:20px; font-weight:bold; color:#002f4b; margin:10px 0; }
-    #timerBar { width:100%; max-width:600px; height:15px; background:#ccc; border-radius:10px; overflow:hidden; margin-bottom:10px; }
-    #timerProgress { height:100%; width:100%; background:#4caf50; transition:width 1s linear; }
-    #pista { position:relative; width:550px; height:300px; background:url("pista.png") center/cover no-repeat; border:4px solid #003f66; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); margin:20px auto 40px; overflow:hidden; }
-    #carrito { position:absolute; width:50px; height:100px; transition:transform 0.5s ease-in-out; }
-    #moneda { position:absolute; width:30px; height:30px; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #02d0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    .header h2 {
+      font-size: 28px;
+      color: #002f4b;
+      margin: 0;
+    }
+    #puntos {
+      font-size: 22px;
+      font-weight: bold;
+      color: #002f4b;
+    }
+    #mensaje {
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffffff;
+      background: #e74c3c;
+      padding: 8px 20px;
+      border-radius: 10px;
+      margin: 12px;
+      display: none;
+    }
+    #nivelML {
+      font-size: 20px;
+      font-weight: bold;
+      color: #002f4b;
+      margin-bottom: 10px;
+    }
+    #pista {
+      position: relative;
+      width: 550px;
+      height: 300px;
+      background: url("pista.png") center/cover no-repeat;
+      border: 4px solid #003f66;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      margin: 20px auto 40px auto;
+      overflow: hidden;
+    }
+    #carrito {
+      position: absolute;
+      width: 50px;
+      height: 100px;
+      transition: transform 0.5s ease-in-out;
+    }
+    #moneda {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+    }
   </style>
 </head>
 <body>
@@ -24,119 +76,101 @@
   </div>
   <div id="mensaje">¡Chocaste!</div>
   <div id="nivelML">Nivel ML: --</div>
-  <div id="timerBar"><div id="timerProgress"></div></div>
   <div id="pista">
     <img id="carrito" src="carro.png" alt="Carrito">
     <img id="moneda"  src="moneda.png" alt="Moneda">
   </div>
 
   <script>
-    // Referencias DOM y estado
-    const carrito = document.getElementById("carrito");
-    const moneda = document.getElementById("moneda");
-    const pista = document.getElementById("pista");
-    const mensaje = document.getElementById("mensaje");
-    const nivelML = document.getElementById("nivelML");
-    const timerProg = document.getElementById("timerProgress");
+    // — Variables de juego
+    const carrito  = document.getElementById("carrito");
+    const moneda   = document.getElementById("moneda");
+    const pista    = document.getElementById("pista");
+    const mensaje  = document.getElementById("mensaje");
+    const nivelML  = document.getElementById("nivelML");
+    let puntos     = 0;
+    let angulo     = 0;
+    let juegoActivo        = true;
+    let ultimoComando      = "";
+    let esperarComandoNuevo = false;
 
-    let puntos = 0;
-    const paso = 10;
-    let angulo = 0;
-    let juegoActivo = true;
-    let movimientoActivo = false;
-    let direccionActual = "U";
-
-    // Métricas ML
-    let giros = 0;
-    let colisiones = 0;
-    let inicioJuego = Date.now();
-
-    // Timer
-    const tiempoMax = 30;
-    let tiempoRest = tiempoMax;
-    let intervalTimer;
-
-    // Posición inicial
     let x, y;
+    let velocidad   = 300;
+    let loopInterval;
+
+    // — Métricas para ML
+    let giros        = 0;
+    let colisiones   = 0;
+    let inicioJuego  = Date.now();
+
+    // — Posición inicial y moneda
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
-      carrito.style.left = x + "px";
-      carrito.style.top = y + "px";
+      carrito.style.left     = x + "px";
+      carrito.style.top      = y + "px";
       carrito.style.transform = "rotate(0deg)";
       angulo = 0;
-      movimientoActivo = false;
       inicioJuego = Date.now();
-      giros = 0;
+      giros      = 0;
       colisiones = 0;
-      reiniciarTimer();
     }
 
-    // Timer functions
-    function actualizarBarra() {
-      timerProg.style.width = (tiempoRest / tiempoMax * 100) + "%";
-    }
-    function refrescarTimer() {
-      tiempoRest--;
-      actualizarBarra();
-      if (tiempoRest <= 0) {
-        perderJuego();
-      }
-    }
-    function reiniciarTimer() {
-      clearInterval(intervalTimer);
-      tiempoRest = tiempoMax;
-      actualizarBarra();
-      intervalTimer = setInterval(refrescarTimer, 1000);
-    }
-
-    // Moneda
     function colocarMoneda() {
-      const maxX = pista.clientWidth - moneda.clientWidth;
+      const maxX = pista.clientWidth  - moneda.clientWidth;
       const maxY = pista.clientHeight - moneda.clientHeight;
-      moneda.style.left = Math.floor(Math.random() * maxX) + "px";
-      moneda.style.top = Math.floor(Math.random() * maxY) + "px";
+      moneda.style.left = Math.floor(Math.random()*maxX) + "px";
+      moneda.style.top  = Math.floor(Math.random()*maxY) + "px";
     }
+
+    // — Colisión moneda
     function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect();
       const rm = moneda.getBoundingClientRect();
-      if (!(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom)) {
+      const overlap = !(rc.right < rm.left ||
+                        rc.left  > rm.right ||
+                        rc.bottom < rm.top ||
+                        rc.top    > rm.bottom);
+      if (overlap) {
         puntos++;
         document.getElementById("puntos").textContent = "Puntos: " + puntos;
         colocarMoneda();
       }
     }
 
-    // Perder juego y ML
+    // — Perder (colisión contra borde)
     function perderJuego() {
-      clearInterval(intervalTimer);
       if (!juegoActivo) return;
       juegoActivo = false;
       colisiones++;
       mensaje.style.display = "block";
       setTimeout(() => mensaje.style.display = "none", 2000);
 
-      // Llamada ML
+      // — Llamada ML
       const dur = (Date.now() - inicioJuego) / 1000;
       fetch("/predecir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tiempo: dur, giros: giros, colisiones: colisiones })
+        body: JSON.stringify({
+          tiempo: dur,
+          giros: giros,
+          colisiones: colisiones
+        })
       })
-      .then(res => res.json())
-      .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
+      .then(r=>r.json())
+      .then(d=>{
+        nivelML.textContent = "Nivel ML: " + d.nivel;
+      })
       .catch(console.error);
 
-      // Reiniciar juego
+      // Reinicio
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
-      setTimeout(() => {
-        juegoActivo = true;
-        posicionInicial();
-      }, 1000);
+      posicionInicial();
+      setTimeout(() => juegoActivo = true, 500); // espero un poco
     }
 
-    // Rotación
+    // — Rotación
     function rotar(dir) {
       if (!juegoActivo) return;
       if (dir === "R") angulo += 90;
@@ -145,58 +179,53 @@
       giros++;
     }
 
-    // Movimiento continuo
-    function moverLoop() {
-      if (!movimientoActivo || !juegoActivo) return;
-      const rad = angulo * Math.PI / 180;
+    // — Movimiento por paso
+    function moverPaso(sentido) {
+      if (!juegoActivo) return;
+      // convierto ángulo a vector
+      const rad = angulo * Math.PI/180;
       let dx = Math.round(Math.sin(rad));
       let dy = -Math.round(Math.cos(rad));
-      if (direccionActual === "D") { dx *= -1; dy *= -1; }
-      x += dx * paso;
-      y += dy * paso;
-      if (x < 0 || x > pista.clientWidth - carrito.clientWidth || y < 0 || y > pista.clientHeight - carrito.clientHeight) {
-        movimientoActivo = false;
+      if (sentido==="D") { dx*=-1; dy*=-1; }
+
+      const nx = x + dx*10;
+      const ny = y + dy*10;
+
+      if (nx<0 || nx>pista.clientWidth - carrito.clientWidth ||
+          ny<0 || ny>pista.clientHeight - carrito.clientHeight) {
         perderJuego();
-      } else {
-        carrito.style.left = x + "px";
-        carrito.style.top = y + "px";
-        detectarColisionMoneda();
+        return;
       }
+      x = nx; y = ny;
+      carrito.style.left = x + "px";
+      carrito.style.top  = y + "px";
+      detectarColisionMoneda();
     }
-    setInterval(moverLoop, 100); // loop cada 100ms para movimiento suave
 
-    // Recibe comandos del joystick
-    window.handleCmd = function(cmd) {
-      const c = cmd.toUpperCase();
-      if (c === "U") {
-        movimientoActivo = true;
-        direccionActual = "U";
-        angulo = 0;
-        carrito.style.transform = `rotate(${angulo}deg)`;
-      } else if (c === "D") {
-        movimientoActivo = true;
-        direccionActual = "D";
-        angulo = 180;
-        carrito.style.transform = `rotate(${angulo}deg)`;
-      } else if (c === "L") {
-        rotar("L");
-      } else if (c === "R") {
-        rotar("R");
-      }
-    };
+    // — Bucle de comandos (polling /)
+    function iniciarLoopComandos() {
+      if (loopInterval) clearInterval(loopInterval);
+      loopInterval = setInterval(()=> {
+        fetch("/")
+          .then(r=>r.text())
+          .then(cmd=>{
+            cmd = cmd.trim();
+            if (!cmd) return;
+            if (esperarComandoNuevo && cmd===ultimoComando) return;
+            esperarComandoNuevo = false;
+            ultimoComando = cmd;
 
-    // Soporte opcional teclado
-    document.addEventListener("keydown", e => {
-      const k = e.key.toLowerCase();
-      if (k === "u") handleCmd("U");
-      if (k === "d") handleCmd("D");
-      if (k === "l") handleCmd("L");
-      if (k === "r") handleCmd("R");
-    });
+            if (cmd==="L"||cmd==="R") rotar(cmd);
+            else if (cmd==="U"||cmd==="D") moverPaso(cmd);
+          })
+          .catch(_=>{});
+      }, velocidad);
+    }
 
-    // Iniciar juego
+    // — Init
     posicionInicial();
     colocarMoneda();
+    iniciarLoopComandos();
   </script>
 </body>
 </html>
