@@ -88,8 +88,8 @@
   <div id="nivelML">Nivel: --</div>
   <div id="timerBar"><div id="timerProgress"></div></div>
   <div id="pista">
-    <img id="carrito" src="static/carro.png" alt="Carrito">
-    <img id="moneda" src="static/moneda.png" alt="Moneda">
+    <img id="carrito" src="carro.png" alt="Carrito">
+    <img id="moneda" src="moneda.png" alt="Moneda">
   </div>
 
   <script>
@@ -282,30 +282,19 @@
     posicionInicial();
     colocarMoneda();
 
-    // Soporte para comandos por parámetro de URL desde MIT App
-    function getParametroCmd() {
+    // Ejecutar comando desde la URL si viene desde MIT App
+    window.addEventListener("load", () => {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('cmd');
-    }
-
-    const comando = getParametroCmd();
-    if (comando) {
-      const key = comando.toLowerCase();
-
-      if (!movimientoActivo) {
+      const comando = urlParams.get("cmd");
+      if (comando) {
         movimientoActivo = true;
+        iniciarTimer();
         inicioJuego = Date.now();
         tiempoAnterior = Date.now();
-        iniciarTimer();
+        const evento = new KeyboardEvent("keydown", { key: comando.toLowerCase() });
+        document.dispatchEvent(evento);
       }
-
-      if (key === "l") rotar("L");
-      else if (key === "r") rotar("R");
-      else if (key === "u") direccionActual = "U";
-      else if (key === "d") direccionActual = "D";
-
-      moverPaso(); // Avanza un paso
-    }
+    });
 
   </script>
 </body>
