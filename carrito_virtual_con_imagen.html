@@ -55,7 +55,6 @@
 
     let x, y;
     function posicionInicial() {
-      // centra y reinicia timer, métricas
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
       carrito.style.left = `${x}px`;
@@ -68,7 +67,6 @@
       reiniciarTimer();
     }
     function centrarCarrito() {
-      // centra sin tocar timer o métricas
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
       carrito.style.left = `${x}px`;
@@ -159,6 +157,7 @@
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
         centrarCarrito();
+        colocarMoneda();  // <--- Mueve la moneda tras choque contra pared
         if (tiempoRestante <= 0) perderJuego(true);
       } else {
         x = nx; y = ny;
