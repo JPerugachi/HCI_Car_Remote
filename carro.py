@@ -6,25 +6,21 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Cargar el modelo
+# Modelo entrenado
 modelo = joblib.load("modelo_carrito.pkl")
 
-# Variable global para guardar el último comando enviado por MIT App
-last_cmd = ""
-
+# Manejar ruta raíz con ?cmd= desde MIT
 @app.route("/")
 def home():
-    global last_cmd
-    cmd = request.args.get('cmd')
-    if cmd:
-        last_cmd = cmd
-    return send_from_directory('.', 'carrito_virtual_con_imagen.html')  # sin templates
+    return send_from_directory('.', 'carrito_virtual_con_imagen.html')
 
+# Archivos estáticos: JS, imágenes, etc.
 @app.route("/<path:filename>")
 def static_files(filename):
     return send_from_directory('.', filename)
 
-@app.route('/predecir', methods=['POST'])
+# Ruta ML para clasificación
+@app.route("/predecir", methods=["POST"])
 def predecir():
     datos = request.get_json()
     tiempo = datos.get("tiempo", 0)
