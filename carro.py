@@ -26,10 +26,13 @@ def predecir():
     tiempo     = float(datos.get("tiempo", 0))
     giros      = int(datos.get("giros", 0))
     colisiones = int(datos.get("colisiones", 0))
-    # Ajusta la forma de entrada si tu modelo lo requiere
+
     X = np.array([[tiempo, giros, colisiones]])
-    nivel = int(modelo.predict(X)[0])
-    return jsonify({"nivel": nivel})
+    # No int(): cojo directamente la etiqueta (string)
+    nivel = modelo.predict(X)[0]
+
+    return jsonify({"nivel": nivel}) 
+
 
 # Archivos estáticos (HTML, imágenes, css...)
 @app.route("/<path:filename>")
