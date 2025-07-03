@@ -1,39 +1,40 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, send_from_directory, jsonify
 import joblib
 import numpy as np
 from flask_cors import CORS
 
-# Configuración de la aplicación Flask
-app = Flask(__name__, template_folder="templates", static_folder="static")
-CORS(app)
 app = Flask(__name__)
+CORS(app)
+
+# Capa de comando
 last_cmd = ""
 
-# Cargo el modelo de ML
+# Carga tu modelo ML
 modelo = joblib.load("modelo_carrito.pkl")
 
-# Ruta raíz: renderiza la plantilla HTML
-@app.route('/')
-def handle_cmd():
+@app.route("/")
+def comando():
     global last_cmd
-    cmd = request.args.get('cmd')
+    cmd = request.args.get("cmd")
     if cmd:
         last_cmd = cmd
-    return last_cmd  # Siempre responde el último comando (NO "ok")
+    return last_cmd  # devuelve siempre el último comando
 
-
-# Endpoint de ML
 @app.route("/predecir", methods=["POST"])
 def predecir():
     datos = request.get_json() or {}
-    tiempo     = datos.get("tiempo", 0)
-    giros      = datos.get("giros", 0)
-    colisiones = datos.get("colisiones", 0)
+    tiempo     = float(datos.get("tiempo", 0))
+    giros      = int(datos.get("giros", 0))
+    colisiones = int(datos.get("colisiones", 0))
+    # Ajusta la forma de entrada si tu modelo lo requiere
+    X = np.array([[tiempo, giros, colisiones]])
+    nivel = int(modelo.predict(X)[0])
+    return jsonify({"nivel": nivel})
 
-    entrada = np.array([[tiempo, giros, colisiones]])
-    nivel    = modelo.predict(entrada)[0]
-    return jsonify({"nivel": int(nivel)})
+# Archivos estáticos (HTML, imágenes, css...)
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory('.', filename)
 
 if __name__ == "__main__":
-    # debug=True solo durante desarrollo
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
