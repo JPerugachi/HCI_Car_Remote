@@ -98,37 +98,37 @@
   </div>
 
   <script>
-    // Elementos DOM
-    const carrito      = document.getElementById("carrito");
-    const moneda       = document.getElementById("moneda");
-    const pista        = document.getElementById("pista");
-    const mensaje      = document.getElementById("mensaje");
-    const nivelML      = document.getElementById("nivelML");
-    const timerProg    = document.getElementById("timerProgress");
+    // --- Elementos DOM
+    const carrito   = document.getElementById("carrito");
+    const moneda    = document.getElementById("moneda");
+    const pista     = document.getElementById("pista");
+    const mensaje   = document.getElementById("mensaje");
+    const nivelML   = document.getElementById("nivelML");
+    const timerProg = document.getElementById("timerProgress");
 
-    // Estado de juego
-    let puntos          = 0;
-    let angulo          = 0;
-    let juegoActivo     = true;
-    let ultimoComando   = "";
-    let esperarNuevo    = false;
+    // --- Estado de juego
+    let puntos        = 0;
+    const paso        = 10;
+    let angulo        = 0;
+    let juegoActivo   = true;
+    let ultimoComando = "";
 
-    // Métricas ML
-    let giros           = 0;
-    let colisiones      = 0;
-    let inicioJuego     = Date.now();
+    // --- Métricas ML
+    let giros       = 0;
+    let colisiones  = 0;
+    let inicioJuego = Date.now();
 
-    // Timer
+    // --- Timer
     const tiempoMaximo  = 30;
     let tiempoRestante  = tiempoMaximo;
     let intervalTimer;
 
-    // Posición y velocidad
+    // --- Posición y polling
     let x, y;
-    let velocidad       = 300;
+    let velocidad    = 300;
     let loopInterval;
 
-    // Inicializar posición y timer
+    // Posición inicial y reinicio de estado
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
@@ -160,7 +160,7 @@
       intervalTimer = setInterval(actualizarTimer, 1000);
     }
 
-    // Moneda
+    // Colocar moneda aleatoria
     function colocarMoneda() {
       const maxX = pista.clientWidth  - moneda.clientWidth;
       const maxY = pista.clientHeight - moneda.clientHeight;
@@ -168,6 +168,7 @@
       moneda.style.top  = Math.floor(Math.random() * maxY) + "px";
     }
 
+    // Detección colisión con moneda
     function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect();
       const rm = moneda.getBoundingClientRect();
@@ -179,7 +180,7 @@
       }
     }
 
-    // Pérdida de juego
+    // Manejo de pérdida de juego
     function perderJuego() {
       clearInterval(intervalTimer);
       if (!juegoActivo) return;
@@ -188,15 +189,15 @@
       mensaje.style.display = "block";
       setTimeout(() => mensaje.style.display = "none", 2000);
 
-      // Llamada ML
+      // Llamada al ML
       const duracion = (Date.now() - inicioJuego) / 1000;
       fetch("/predecir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
       })
-      .then(r => r.json())
-      .then(d => nivelML.textContent = "Nivel ML: " + d.nivel)
+      .then(res => res.json())
+      .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
       .catch(console.error);
 
       // Reiniciar juego tras breve pausa
@@ -208,7 +209,7 @@
       }, 1000);
     }
 
-    // Rotación y movimiento
+    // Rotación del carrito
     function rotar(dir) {
       if (!juegoActivo) return;
       if (dir === "R") angulo += 90;
@@ -217,6 +218,7 @@
       giros++;
     }
 
+    // Movimiento en paso
     function moverPaso(sentido) {
       if (!juegoActivo) return;
       const rad = angulo * Math.PI/180;
@@ -235,26 +237,24 @@
       }
     }
 
-    // Polling de comandos
+    // Polling de comandos sin duplicados
     function iniciarLoopComandos() {
       if (loopInterval) clearInterval(loopInterval);
       loopInterval = setInterval(() => {
         fetch("/")
-          .then(r => r.text())
+          .then(res => res.text())
           .then(cmd => {
             cmd = cmd.trim();
-            if (!cmd) return;
-            if (esperarNuevo && cmd === ultimoComando) return;
-            esperarNuevo = false;
+            if (!cmd || cmd === ultimoComando) return;
             ultimoComando = cmd;
             if (cmd === "L" || cmd === "R") rotar(cmd);
             else if (cmd === "U" || cmd === "D") moverPaso(cmd);
           })
-          .catch(() => {});
+          .catch(console.error);
       }, velocidad);
     }
 
-    // Inicialización
+    // Inicio del juego
     posicionInicial();
     colocarMoneda();
     iniciarLoopComandos();
