@@ -1,19 +1,28 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, send_from_directory, jsonify
 import joblib
 import numpy as np
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Permite que tu HTML pueda hacer fetch al backend
+CORS(app)
 
 # Cargar el modelo
 modelo = joblib.load("modelo_carrito.pkl")
 
+# Variable global para guardar el último comando enviado por MIT App
+last_cmd = ""
 
 @app.route("/")
 def home():
-     return render_template("carrito_virtual_con_imagen.html")
+    global last_cmd
+    cmd = request.args.get('cmd')
+    if cmd:
+        last_cmd = cmd
+    return send_from_directory('.', 'carrito_virtual_con_imagen.html')  # sin templates
 
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory('.', filename)
 
 @app.route('/predecir', methods=['POST'])
 def predecir():
