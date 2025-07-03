@@ -119,8 +119,6 @@
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-    let esperarComandoNuevo = false;
-    let ultimoComando = "";
     let velocidad = 300;
     let loopInterval;
 
@@ -134,7 +132,7 @@
     let tiempoRestante = tiempoMaximo;
     let intervalTimer;
 
-    // Position initialization
+    // Position init
     let x, y;
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
@@ -143,7 +141,6 @@
       carrito.style.top = y + "px";
       carrito.style.transform = "rotate(0deg)";
       angulo = 0;
-      movimientoActivo = false;
       inicioJuego = Date.now();
       giros = 0;
       colisiones = 0;
@@ -151,7 +148,7 @@
       reiniciarTimer();
     }
 
-    // Timer functions
+    // Timer funcs
     function actualizarBarra() {
       timerProg.style.width = (tiempoRestante / tiempoMaximo * 100) + "%";
     }
@@ -169,14 +166,13 @@
       intervalTimer = setInterval(refrescarTimer, 1000);
     }
 
-    // Place coin randomly
+    // Coin placement and collision
     function colocarMoneda() {
       const maxX = pista.clientWidth - moneda.clientWidth;
       const maxY = pista.clientHeight - moneda.clientHeight;
       moneda.style.left = Math.floor(Math.random() * maxX) + "px";
       moneda.style.top = Math.floor(Math.random() * maxY) + "px";
     }
-
     function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect();
       const rm = moneda.getBoundingClientRect();
@@ -184,16 +180,23 @@
       if (overlap) {
         puntos++;
         document.getElementById("puntos").textContent = "Puntos: " + puntos;
+        // Increase timer by 25%
+        tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
+        actualizarBarra();
         colocarMoneda();
       }
     }
 
-    // Handle losing and ML prediction
+    // Handle losing & ML
     function perderJuego(timeout = false) {
       clearInterval(intervalTimer);
       if (!juegoActivo) return;
       juegoActivo = false;
-      if (!timeout) colisiones++;
+      if (!timeout) {
+        // On collision, decrease timer by 25%
+        tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
+        actualizarBarra();
+      }
       mensaje.textContent = timeout ? "¡Perdiste!" : "¡Chocaste!";
       mensaje.style.display = "block";
       setTimeout(() => mensaje.style.display = "none", 2000);
@@ -209,7 +212,7 @@
       .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
       .catch(console.error);
 
-      // Reset points and restart game loop
+      // Reset points and start next round
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
       setTimeout(() => {
@@ -227,7 +230,7 @@
       giros++;
     }
 
-    // Single-step move
+    // Single move
     function moverPaso(sentido) {
       if (!juegoActivo) return;
       const rad = angulo * Math.PI / 180;
@@ -236,8 +239,18 @@
       if (sentido === "D") { dx *= -1; dy *= -1; }
       const nx = x + dx * paso;
       const ny = y + dy * paso;
+      // Border collision now reduces timer instead of immediate lose
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
-        perderJuego(false);
+        colisiones++;
+        // Reduce timer by 25%
+        tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
+        actualizarBarra();
+        mensaje.textContent = "¡Chocaste!";
+        mensaje.style.display = "block";
+        setTimeout(() => mensaje.style.display = "none", 1000);
+        posicionInicial();
+        // If timer depleted, trigger loss
+        if (tiempoRestante <= 0) perderJuego(true);
       } else {
         x = nx; y = ny;
         carrito.style.left = x + "px";
@@ -248,7 +261,7 @@
 
     // Command polling
     function iniciarLoopComandos() {
-      setInterval(() => {
+      loopInterval = setInterval(() => {
         fetch("/")
           .then(r => r.text())
           .then(cmd => {
@@ -261,7 +274,7 @@
       }, velocidad);
     }
 
-    // Initialize game
+    // Init
     posicionInicial();
     colocarMoneda();
     iniciarLoopComandos();
