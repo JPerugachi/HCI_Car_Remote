@@ -5,91 +5,17 @@
   <title>Carrito Snake</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #02d0ff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 40px;
-      margin-top: 30px;
-    }
-    .header h2 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 28px;
-      color: #002f4b;
-      text-shadow: 1px 1px 2px #ffffff90;
-      margin: 0;
-    }
-    #puntos {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 22px;
-      font-weight: bold;
-      color: #002f4b;
-      text-shadow: 1px 1px 1px #ffffff80;
-    }
-    #mensaje {
-      font-size: 22px;
-      font-weight: bold;
-      font-family: 'Orbitron', sans-serif;
-      color: #ffffff;
-      background: #e74c3c;
-      padding: 8px 20px;
-      border-radius: 10px;
-      margin: 12px;
-      display: none;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    #nivelML {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 20px;
-      color: #002f4b;
-      margin-bottom: 10px;
-      text-shadow: 1px 1px 1px #ffffff80;
-    }
-    #timerBar {
-      width: 100%;
-      max-width: 600px;
-      height: 15px;
-      background: #ccc;
-      margin: 10px auto;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #timerProgress {
-      height: 100%;
-      width: 100%;
-      background-color: #4caf50;
-      transition: width 1s linear;
-    }
-    #pista {
-      position: relative;
-      width: 550px;
-      height: 300px;
-      background: url("pista.png") center/cover no-repeat;
-      border: 4px solid #003f66;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      margin: 20px auto 40px auto;
-      overflow: hidden;
-    }
-    #carrito {
-      position: absolute;
-      width: 50px;
-      height: 100px;
-      transition: transform 0.5s ease-in-out;
-    }
-    #moneda {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-    }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #02d0ff; display: flex; flex-direction: column; align-items: center; }
+    .header { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 30px; }
+    .header h2 { font-family: 'Orbitron', sans-serif; font-size: 28px; color: #002f4b; text-shadow: 1px 1px 2px #ffffff90; margin: 0; }
+    #puntos { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: bold; color: #002f4b; text-shadow: 1px 1px 1px #ffffff80; }
+    #mensaje { font-size: 22px; font-weight: bold; font-family: 'Orbitron', sans-serif; color: #ffffff; background: #e74c3c; padding: 8px 20px; border-radius: 10px; margin: 12px; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    #nivelML { font-family: 'Orbitron', sans-serif; font-size: 20px; color: #002f4b; margin-bottom: 10px; text-shadow: 1px 1px 1px #ffffff80; }
+    #timerBar { width: 100%; max-width: 600px; height: 15px; background: #ccc; margin: 10px auto; border-radius: 10px; overflow: hidden; }
+    #timerProgress { height: 100%; width: 100%; background-color: #4caf50; transition: width 1s linear; }
+    #pista { position: relative; width: 550px; height: 300px; background: url("pista.png") center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); margin: 20px auto 40px auto; overflow: hidden; }
+    #carrito { position: absolute; width: 50px; height: 100px; transition: transform 0.5s ease-in-out; }
+    #moneda { position: absolute; width: 30px; height: 30px; }
   </style>
 </head>
 <body>
@@ -97,7 +23,7 @@
     <h2>Carrito Snake</h2>
     <div id="puntos">Puntos: 0</div>
   </div>
-  <div id="mensaje">¡Chocaste!</div>
+  <div id="mensaje">¡Perdiste!</div>
   <div id="nivelML">Nivel ML: --</div>
   <div id="timerBar"><div id="timerProgress"></div></div>
   <div id="pista">
@@ -106,7 +32,6 @@
   </div>
 
   <script>
-    // DOM references
     const carrito = document.getElementById("carrito");
     const moneda = document.getElementById("moneda");
     const pista = document.getElementById("pista");
@@ -114,7 +39,6 @@
     const nivelML = document.getElementById("nivelML");
     const timerProg = document.getElementById("timerProgress");
 
-    // Game state
     let puntos = 0;
     const paso = 10;
     let angulo = 0;
@@ -122,17 +46,14 @@
     let velocidad = 300;
     let loopInterval;
 
-    // ML metrics
     let giros = 0;
     let colisiones = 0;
     let inicioJuego = Date.now();
 
-    // Timer
     const tiempoMaximo = 30;
     let tiempoRestante = tiempoMaximo;
     let intervalTimer;
 
-    // Position init
     let x, y;
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
@@ -144,11 +65,9 @@
       inicioJuego = Date.now();
       giros = 0;
       colisiones = 0;
-      // Restart timer
       reiniciarTimer();
     }
 
-    // Timer funcs
     function actualizarBarra() {
       timerProg.style.width = (tiempoRestante / tiempoMaximo * 100) + "%";
     }
@@ -166,7 +85,6 @@
       intervalTimer = setInterval(refrescarTimer, 1000);
     }
 
-    // Coin placement and collision
     function colocarMoneda() {
       const maxX = pista.clientWidth - moneda.clientWidth;
       const maxY = pista.clientHeight - moneda.clientHeight;
@@ -180,39 +98,29 @@
       if (overlap) {
         puntos++;
         document.getElementById("puntos").textContent = "Puntos: " + puntos;
-        // Increase timer by 25%
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
         actualizarBarra();
         colocarMoneda();
       }
     }
 
-    // Handle losing & ML
     function perderJuego(timeout = false) {
       clearInterval(intervalTimer);
       if (!juegoActivo) return;
       juegoActivo = false;
-      if (!timeout) {
-        // On collision, decrease timer by 25%
-        tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
-        actualizarBarra();
+      if (timeout) {
+        mensaje.style.display = "block";
+        setTimeout(() => mensaje.style.display = "none", 2000);
+        const duracion = (Date.now() - inicioJuego) / 1000;
+        fetch("/predecir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
+        })
+        .then(res => res.json())
+        .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
+        .catch(console.error);
       }
-      mensaje.textContent = timeout ? "¡Perdiste!" : "¡Chocaste!";
-      mensaje.style.display = "block";
-      setTimeout(() => mensaje.style.display = "none", 2000);
-
-      // ML call
-      const duracion = (Date.now() - inicioJuego) / 1000;
-      fetch("/predecir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
-      })
-      .then(res => res.json())
-      .then(data => nivelML.textContent = "Nivel ML: " + data.nivel)
-      .catch(console.error);
-
-      // Reset points and start next round
       puntos = 0;
       document.getElementById("puntos").textContent = "Puntos: 0";
       setTimeout(() => {
@@ -221,7 +129,6 @@
       }, 1000);
     }
 
-    // Rotation
     function rotar(direccion) {
       if (!juegoActivo) return;
       if (direccion === "R") angulo += 90;
@@ -230,7 +137,6 @@
       giros++;
     }
 
-    // Single move
     function moverPaso(sentido) {
       if (!juegoActivo) return;
       const rad = angulo * Math.PI / 180;
@@ -239,17 +145,12 @@
       if (sentido === "D") { dx *= -1; dy *= -1; }
       const nx = x + dx * paso;
       const ny = y + dy * paso;
-      // Border collision now reduces timer instead of immediate lose
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
-        // Reduce timer by 25%
+        // only reduce timer on collision
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
-        mensaje.textContent = "¡Chocaste!";
-        mensaje.style.display = "block";
-        setTimeout(() => mensaje.style.display = "none", 1000);
         posicionInicial();
-        // If timer depleted, trigger loss
         if (tiempoRestante <= 0) perderJuego(true);
       } else {
         x = nx; y = ny;
@@ -259,11 +160,10 @@
       }
     }
 
-    // Command polling
     function iniciarLoopComandos() {
       loopInterval = setInterval(() => {
         fetch("/")
-          .then(r => r.text())
+          .then(res => res.text())
           .then(cmd => {
             cmd = cmd.trim();
             if (!cmd) return;
@@ -274,7 +174,6 @@
       }, velocidad);
     }
 
-    // Init
     posicionInicial();
     colocarMoneda();
     iniciarLoopComandos();
