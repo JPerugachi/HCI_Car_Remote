@@ -288,12 +288,21 @@
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('cmd');
     }
+const comando = getParametroCmd();
+if (comando) {
+  const key = comando.toLowerCase();
 
-    const comando = getParametroCmd();
-    if (comando) {
-      const evento = new KeyboardEvent('keydown', { key: comando.toLowerCase() });
-      document.dispatchEvent(evento);
-    }
+  if (!movimientoActivo && (key === "arrowup" || key === "w" || key === "u")) {
+    movimientoActivo = true;
+    inicioJuego = Date.now();
+    tiempoAnterior = Date.now();
+    iniciarTimer();
+  }
+
+  const evento = new KeyboardEvent('keydown', { key });
+  document.dispatchEvent(evento);
+}
+
 
   </script>
 </body>
