@@ -13,7 +13,7 @@
     #nivelML { font-family: 'Orbitron', sans-serif; font-size: 20px; color: #002f4b; margin-bottom: 10px; text-shadow: 1px 1px 1px #ffffff80; }
     #timerBar { width: 100%; max-width: 600px; height: 15px; background: #ccc; margin: 10px auto; border-radius: 10px; overflow: hidden; }
     #timerProgress { height: 100%; width: 100%; background-color: #4caf50; transition: width 1s linear; }
-    #pista { position: relative; width: 550px; height: 300px; background: url("pista.png") center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); margin: 20px auto 40px auto; overflow: hidden; }
+    #pista { position: relative; width: 550px; height: 300px; background: url('pista.png') center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); margin: 20px auto 40px; overflow: hidden; }
     #carrito { position: absolute; width: 50px; height: 100px; transition: transform 0.5s ease-in-out; }
     #moneda { position: absolute; width: 30px; height: 30px; }
   </style>
@@ -30,14 +30,13 @@
     <img id="carrito" src="carro.png" alt="Carrito">
     <img id="moneda" src="moneda.png" alt="Moneda">
   </div>
-
   <script>
-    const carrito = document.getElementById("carrito");
-    const moneda = document.getElementById("moneda");
-    const pista = document.getElementById("pista");
-    const mensaje = document.getElementById("mensaje");
-    const nivelML = document.getElementById("nivelML");
-    const timerProg = document.getElementById("timerProgress");
+    const carrito = document.getElementById('carrito');
+    const moneda = document.getElementById('moneda');
+    const pista = document.getElementById('pista');
+    const mensaje = document.getElementById('mensaje');
+    const nivelML = document.getElementById('nivelML');
+    const timerProg = document.getElementById('timerProgress');
 
     let puntos = 0;
     const paso = 10;
@@ -66,14 +65,6 @@
       colisiones = 0;
       reiniciarTimer();
     }
-    function centrarCarrito() {
-      x = (pista.clientWidth - carrito.clientWidth) / 2;
-      y = (pista.clientHeight - carrito.clientHeight) / 2;
-      carrito.style.left = `${x}px`;
-      carrito.style.top = `${y}px`;
-      carrito.style.transform = 'rotate(0deg)';
-      angulo = 0;
-    }
 
     function actualizarBarra() {
       timerProg.style.width = `${(tiempoRestante / tiempoMaximo) * 100}%`;
@@ -99,12 +90,10 @@
       moneda.style.top = `${Math.floor(Math.random() * maxY)}px`;
     }
     function detectarColisionMoneda() {
-      const rc = carrito.getBoundingClientRect();
-      const rm = moneda.getBoundingClientRect();
-      const overlap = !(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom);
-      if (overlap) {
+      const rc = carrito.getBoundingClientRect(), rm = moneda.getBoundingClientRect();
+      if (!(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom)) {
         puntos++;
-        document.getElementById("puntos").textContent = `Puntos: ${puntos}`;
+        document.getElementById('puntos').textContent = `Puntos: ${puntos}`;
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
         actualizarBarra();
         colocarMoneda();
@@ -125,21 +114,24 @@
           body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
         })
         .then(res => res.json())
-        .then(data => nivelML.textContent = `Nivel ML: ${data.nivel}`)
+        .then(data => {
+          nivelML.textContent = `Nivel ML: ${data.nivel}`;
+          alert(`Nivel detectado: ${data.nivel}`);  // mostramos alerta
+        })
         .catch(console.error);
       }
       puntos = 0;
-      document.getElementById("puntos").textContent = 'Puntos: 0';
+      document.getElementById('puntos').textContent = 'Puntos: 0';
       setTimeout(() => {
         juegoActivo = true;
         posicionInicial();
       }, 1000);
     }
 
-    function rotar(direccion) {
+    function rotar(dir) {
       if (!juegoActivo) return;
-      if (direccion === 'R') angulo += 90;
-      if (direccion === 'L') angulo -= 90;
+      if (dir === 'R') angulo += 90;
+      if (dir === 'L') angulo -= 90;
       carrito.style.transform = `rotate(${angulo}deg)`;
       giros++;
     }
@@ -147,17 +139,20 @@
     function moverPaso(sentido) {
       if (!juegoActivo) return;
       const rad = angulo * Math.PI/180;
-      let dx = Math.round(Math.sin(rad));
-      let dy = -Math.round(Math.cos(rad));
-      if (sentido==='D') { dx*=-1; dy*=-1; }
-      const nx = x + dx*paso;
-      const ny = y + dy*paso;
+      let dx = Math.round(Math.sin(rad)), dy = -Math.round(Math.cos(rad));
+      if (sentido === 'D') { dx *= -1; dy *= -1; }
+      const nx = x + dx * paso, ny = y + dy * paso;
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
-        centrarCarrito();
-        colocarMoneda();  // <--- Mueve la moneda tras choque contra pared
+        // reposicionar sin alterar timer
+        x = (pista.clientWidth - carrito.clientWidth) / 2;
+        y = (pista.clientHeight - carrito.clientHeight) / 2;
+        carrito.style.left = `${x}px`;
+        carrito.style.top = `${y}px`;
+        carrito.style.transform = 'rotate(0deg)';
+        angulo = 0;
         if (tiempoRestante <= 0) perderJuego(true);
       } else {
         x = nx; y = ny;
@@ -173,16 +168,14 @@
           .then(res => res.text())
           .then(cmd => {
             cmd = cmd.trim(); if (!cmd) return;
-            if (cmd==='L'||cmd==='R') rotar(cmd);
-            else if (cmd==='U'||cmd==='D') moverPaso(cmd);
+            if (cmd === 'L' || cmd === 'R') rotar(cmd);
+            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
           })
-          .catch(()=>{});
+          .catch(() => {});
       }, velocidad);
     }
 
-    posicionInicial();
-    colocarMoneda();
-    iniciarLoopComandos();
+    posicionInicial(); colocarMoneda(); iniciarLoopComandos();
   </script>
 </body>
 </html>
