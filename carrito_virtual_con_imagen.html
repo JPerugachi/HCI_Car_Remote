@@ -63,8 +63,6 @@
       inicioJuego = Date.now();
       giros = 0;
       colisiones = 0;
-      puntos = 0;
-      document.getElementById('puntos').textContent = 'Puntos: 0';
       reiniciarTimer();
     }
 
@@ -113,12 +111,7 @@
         fetch('/predecir', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            tiempo: duracion,
-            giros: giros,
-            colisiones: colisiones,
-            puntos: puntos
-          })
+          body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
         })
         .then(res => res.json())
         .then(data => {
@@ -152,6 +145,7 @@
         colisiones++;
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
+        // reposicionar sin alterar timer
         x = (pista.clientWidth - carrito.clientWidth) / 2;
         y = (pista.clientHeight - carrito.clientHeight) / 2;
         carrito.style.left = `${x}px`;
@@ -168,7 +162,7 @@
     }
 
     function iniciarLoopComandos() {
-      setInterval(() => {
+      loopInterval = setInterval(() => {
         fetch('/')
           .then(res => res.text())
           .then(cmd => {
