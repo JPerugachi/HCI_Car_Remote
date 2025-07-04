@@ -16,6 +16,7 @@
     #pista { position: relative; width: 550px; height: 300px; background: url('pista.png') center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); margin: 20px auto 40px; overflow: hidden; }
     #carrito { position: absolute; width: 50px; height: 100px; transition: transform 0.5s ease-in-out; }
     #moneda { position: absolute; width: 30px; height: 30px; }
+    .obstaculo { position: absolute; width: 30px; height: 30px; background: rgba(231,76,60,0.8); border-radius: 5px; }
   </style>
 </head>
 <body>
@@ -52,6 +53,8 @@
     const tiempoMaximo = 30;
     let tiempoRestante = tiempoMaximo;
     let tiempos = [];
+    let nivelActual = 'novato';
+    let obstaculoInterval;
 
     let x, y;
     function posicionInicial() {
@@ -71,6 +74,7 @@
       tiempoRestante = tiempoMaximo;
       actualizarBarra();
       reiniciarTimer();
+      if (obstaculoInterval) clearInterval(obstaculoInterval);
     }
 
     function actualizarBarra() {
@@ -78,7 +82,9 @@
     }
 
     function refrescarTimer() {
-      tiempoRestante--;
+      // Ajuste velocidad según nivel
+      const factors = { novato: 0.5, intermedio: 1, experto: 1.5 };
+      tiempoRestante = Math.max(0, tiempoRestante - factors[nivelActual]);
       actualizarBarra();
       if (tiempoRestante <= 0) {
         perderJuego(true);
@@ -87,7 +93,7 @@
 
     function reiniciarTimer() {
       clearInterval(intervalTimer);
-      intervaloTimer = setInterval(refrescarTimer, 1000);
+      intervalTimer = setInterval(refrescarTimer, 1000);
     }
 
     function colocarMoneda() {
@@ -112,6 +118,17 @@
       }
     }
 
+    function spawnObstaculo() {
+      const o = document.createElement('div');
+      o.className = 'obstaculo';
+      const ox = Math.random() * (pista.clientWidth - 30);
+      const oy = Math.random() * (pista.clientHeight - 30);
+      o.style.left = `${ox}px`;
+      o.style.top  = `${oy}px`;
+      pista.appendChild(o);
+      setTimeout(() => pista.removeChild(o), 4000);
+    }
+
     function perderJuego(timeout = false) {
       clearInterval(intervalTimer);
       if (!juegoActivo) return;
@@ -127,7 +144,11 @@
         })
         .then(res => res.json())
         .then(data => {
-          nivelML.textContent = `Nivel ML: ${data.nivel}`;
+          nivelActual = data.nivel;
+          nivelML.textContent = `Nivel ML: ${nivelActual}`;
+          if (nivelActual === 'experto') {
+            obstaculoInterval = setInterval(spawnObstaculo, 3000);
+          }
         })
         .catch(console.error);
       }
@@ -154,10 +175,8 @@
       const ny = y + dy * paso;
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
-        // Reducir la barra un 25% al chocar
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
-        // Reposicionar el carrito al centro sin reiniciar el timer
         x = (pista.clientWidth - carrito.clientWidth) / 2;
         y = (pista.clientHeight - carrito.clientHeight) / 2;
         carrito.style.left = `${x}px`;
