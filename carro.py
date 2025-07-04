@@ -2,6 +2,8 @@ from flask import Flask, request, send_from_directory, jsonify
 import joblib
 import numpy as np
 from flask_cors import CORS
+import pandas as pd
+
 
 app = Flask(__name__)
 CORS(app)
@@ -23,17 +25,19 @@ def comando():
 @app.route("/predecir", methods=["POST"])
 def predecir():
     datos = request.get_json() or {}
-    # <-- Añade esta línea para debug:
-    print("ML payload recibido:", datos)
-
-    tiempo     = float(datos.get("duracionPromedio",     0))
-    giros      = int(  datos.get("giros",      0))
+    tiempo     = float(datos.get("tiempo", 0))
+    giros      = int(  datos.get("giros",  0))
     colisiones = int(  datos.get("colisiones", 0))
 
     X = np.array([[tiempo, giros, colisiones]])
+    # Creamos un DataFrame con nombres de feature
+    X = pd.DataFrame(
+        [[tiempo, giros, colisiones]],
+        columns=["tiempo", "giros", "colisiones"]
+    )
+
     nivel = modelo.predict(X)[0]
     return jsonify({"nivel": nivel})
-
 
 
 # Archivos estáticos (HTML, imágenes, css...)
