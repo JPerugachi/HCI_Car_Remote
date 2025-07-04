@@ -116,7 +116,6 @@
         .then(res => res.json())
         .then(data => {
           nivelML.textContent = `Nivel ML: ${data.nivel}`;
-          alert(`Nivel detectado: ${data.nivel}`);  // mostramos alerta
         })
         .catch(console.error);
       }
