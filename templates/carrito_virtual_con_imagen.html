@@ -154,9 +154,16 @@
       const ny = y + dy * paso;
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
+        // Reducir la barra un 25% al chocar
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
-        posicionInicial();
+        // Reposicionar el carrito al centro sin reiniciar el timer
+        x = (pista.clientWidth - carrito.clientWidth) / 2;
+        y = (pista.clientHeight - carrito.clientHeight) / 2;
+        carrito.style.left = `${x}px`;
+        carrito.style.top = `${y}px`;
+        carrito.style.transform = 'rotate(0deg)';
+        angulo = 0;
       } else {
         x = nx;
         y = ny;
