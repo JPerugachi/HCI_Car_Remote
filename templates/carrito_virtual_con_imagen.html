@@ -5,16 +5,15 @@
   <title>Carrito Snake</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #02d0ff; display: flex; flex-direction: column; align-items: center; }
-    .header { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 30px; }
-    .header h2 { font-family: 'Orbitron', sans-serif; font-size: 28px; color: #002f4b; text-shadow: 1px 1px 2px #ffffff90; margin: 0; }
-    #puntos { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: bold; color: #002f4b; text-shadow: 1px 1px 1px #ffffff80; }
-    #nivelML { font-family: 'Orbitron', sans-serif; font-size: 20px; color: #002f4b; margin: 12px 0; text-shadow: 1px 1px 1px #ffffff80; }
-    #timerBar { width: 100%; max-width: 600px; height: 15px; background: #ccc; margin: 10px auto; border-radius: 10px; overflow: hidden; }
-    #timerProgress { height: 100%; width: 100%; background-color: #4caf50; transition: width 1s linear; }
-    #pista { position: relative; width: 550px; height: 300px; background: url('pista.png') center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); margin: 20px auto 40px; overflow: hidden; }
-    #carrito { position: absolute; width: 50px; height: 100px; transition: transform 0.5s ease-in-out; }
-    #moneda { position: absolute; width: 30px; height: 30px; }
+    body { margin:0; font-family:'Segoe UI',sans-serif; background:#02d0ff; display:flex; flex-direction:column; align-items:center; }
+    .header { display:flex; align-items:center; gap:40px; margin-top:30px; }
+    .header h2 { font-family:'Orbitron',sans-serif; font-size:28px; color:#002f4b; margin:0; }
+    #puntos, #nivelML { font-family:'Orbitron',sans-serif; font-size:22px; font-weight:bold; color:#002f4b; margin:12px 0; }
+    #timerBar { width:100%; max-width:600px; height:15px; background:#ccc; border-radius:10px; overflow:hidden; }
+    #timerProgress { height:100%; width:100%; background:#4caf50; transition:width 1s linear; }
+    #pista { position:relative; width:550px; height:300px; background:url('pista.png') center/cover no-repeat; border:4px solid #003f66; border-radius:12px; overflow:hidden; margin:20px auto; }
+    #carrito { position:absolute; width:50px; height:100px; transition:transform .5s ease-in-out; }
+    #moneda { position:absolute; width:30px; height:30px; }
   </style>
 </head>
 <body>
@@ -35,21 +34,9 @@
     const nivelML = document.getElementById('nivelML');
     const timerProg = document.getElementById('timerProgress');
 
-    let puntos = 0;
-    const paso = 10;
-    let angulo = 0;
-    let juegoActivo = true;
-    const velocidad = 300;
-
-    let giros = 0;
-    let colisiones = 0;
-    let inicioJuego = Date.now();
-
-    const tiempoMaximo = 30;
-    let tiempoRestante = tiempoMaximo;
-    let intervalTimer;
-
-    let x, y;
+    let puntos = 0, giros = 0, colisiones = 0, angulo = 0, juegoActivo = true;
+    const paso = 10, velocidad = 300, tiempoMax = 30;
+    let x, y, tiempoRest = tiempoMax, timerInterval, inicioJuego;
 
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
@@ -58,28 +45,24 @@
       carrito.style.top = `${y}px`;
       carrito.style.transform = 'rotate(0deg)';
       angulo = 0;
+      giros = 0; colisiones = 0; puntos = 0;
+      tiempoRest = tiempoMax;
       inicioJuego = Date.now();
-      giros = 0;
-      colisiones = 0;
-      tiempoRestante = tiempoMaximo;
-      // Mantener el nivel mostrado hasta nueva predicción
+      document.getElementById('puntos').textContent = 'Puntos: 0';
       actualizarBarra();
-      reiniciarTimer();
+      iniciarTimer();
     }
 
     function actualizarBarra() {
-      timerProg.style.width = `${(tiempoRestante / tiempoMaximo) * 100}%`;
+      timerProg.style.width = `${(tiempoRest / tiempoMax) * 100}%`;
     }
-    function refrescarTimer() {
-      tiempoRestante--;
-      actualizarBarra();
-      if (tiempoRestante <= 0) {
-        perderJuego();
-      }
-    }
-    function reiniciarTimer() {
-      clearInterval(intervalTimer);
-      intervalTimer = setInterval(refrescarTimer, 1000);
+    function iniciarTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        tiempoRest--;
+        actualizarBarra();
+        if (tiempoRest <= 0) perderJuego();
+      }, 1000);
     }
 
     function colocarMoneda() {
@@ -88,80 +71,74 @@
       moneda.style.left = `${Math.floor(Math.random() * maxX)}px`;
       moneda.style.top = `${Math.floor(Math.random() * maxY)}px`;
     }
-    function detectarColisionMoneda() {
-      const rc = carrito.getBoundingClientRect(), rm = moneda.getBoundingClientRect();
+
+    function detectarColMoneda() {
+      const rc = carrito.getBoundingClientRect();
+      const rm = moneda.getBoundingClientRect();
       if (!(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom)) {
         puntos++;
         document.getElementById('puntos').textContent = `Puntos: ${puntos}`;
-        tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
+        tiempoRest = Math.min(tiempoMax, tiempoRest + tiempoMax * 0.25);
         actualizarBarra();
         colocarMoneda();
       }
     }
 
     function perderJuego() {
-      clearInterval(intervalTimer);
+      clearInterval(timerInterval);
       if (!juegoActivo) return;
       juegoActivo = false;
       const duracion = (Date.now() - inicioJuego) / 1000;
       fetch('/predecir', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ tiempo: duracion, giros, colisiones, puntos })
       })
       .then(res => res.json())
       .then(data => nivelML.textContent = `Nivel ML: ${data.nivel}`)
       .catch(console.error);
 
-      puntos = 0;
-      document.getElementById('puntos').textContent = 'Puntos: 0';
       setTimeout(() => { juegoActivo = true; posicionInicial(); }, 1000);
     }
 
     function rotar(dir) {
       if (!juegoActivo) return;
-      if (dir === 'R') angulo += 90;
-      if (dir === 'L') angulo -= 90;
+      angulo += (dir === 'R' ? 90 : -90);
       carrito.style.transform = `rotate(${angulo}deg)`;
       giros++;
     }
 
     function moverPaso(sentido) {
       if (!juegoActivo) return;
-      const rad = angulo * Math.PI/180;
+      const rad = angulo * Math.PI / 180;
       let dx = Math.round(Math.sin(rad)), dy = -Math.round(Math.cos(rad));
       if (sentido === 'D') { dx *= -1; dy *= -1; }
       const nx = x + dx * paso, ny = y + dy * paso;
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
-        tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
+        tiempoRest = Math.max(0, tiempoRest - tiempoMax * 0.25);
         actualizarBarra();
-        x = (pista.clientWidth - carrito.clientWidth) / 2;
-        y = (pista.clientHeight - carrito.clientHeight) / 2;
-        carrito.style.left = `${x}px`;
-        carrito.style.top = `${y}px`;
-        carrito.style.transform = 'rotate(0deg)';
-        angulo = 0;
-        if (tiempoRestante <= 0) perderJuego();
+        posicionInicial();
       } else {
         x = nx; y = ny;
         carrito.style.left = `${x}px`;
         carrito.style.top = `${y}px`;
-        detectarColisionMoneda();
+        detectarColMoneda();
       }
     }
 
-    let loopInterval;
     function iniciarLoopComandos() {
-      loopInterval = setInterval(() => {
+      setInterval(() => {
         fetch('/')
           .then(res => res.text())
-          .then(cmd => { cmd = cmd.trim().toUpperCase(); if (cmd === 'L' || cmd === 'R') rotar(cmd); else if (cmd === 'U' || cmd === 'D') moverPaso(cmd); })
+          .then(cmd => {
+            cmd = cmd.trim().toUpperCase();
+            if (cmd === 'L' || cmd === 'R') rotar(cmd);
+            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
+          })
           .catch(() => {});
       }, velocidad);
     }
 
     posicionInicial(); colocarMoneda(); iniciarLoopComandos();
   </script>
-</body>
-</html>
