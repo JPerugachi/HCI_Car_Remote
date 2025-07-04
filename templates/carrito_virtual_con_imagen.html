@@ -204,12 +204,17 @@
       loopInterval = setInterval(() => {
         fetch('/')
           .then(res => res.text())
-          .then(cmd => { cmd = cmd.trim(); if (!cmd) return; if (cmd === 'L' || cmd === 'R') rotar(cmd); else if (cmd === 'U' || cmd === 'D') moverPaso(cmd); })
+          .then(cmd => {
+            cmd = cmd.trim().toUpperCase(); // normalize to uppercase
+            if (!cmd) return;
+            if (cmd === 'L' || cmd === 'R') rotar(cmd);
+            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
+          })
           .catch(() => {});
       }, velocidad);
     }
 
-    posicionInicial(); colocarMoneda(); iniciarLoopComandos();
+    iniciarLoopComandos();
   </script>
 </body>
 </html>
