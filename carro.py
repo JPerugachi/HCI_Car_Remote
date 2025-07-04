@@ -26,7 +26,7 @@ def predecir():
     # <-- Añade esta línea para debug:
     print("ML payload recibido:", datos)
 
-    tiempo     = float(datos.get("tiempo",     0))
+    tiempo     = float(datos.get("duracionPromedio",     0))
     giros      = int(  datos.get("giros",      0))
     colisiones = int(  datos.get("colisiones", 0))
 
