@@ -39,7 +39,7 @@
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-    let velocidad = 300;
+    const velocidad = 300;
 
     let giros = 0;
     let colisiones = 0;
@@ -62,7 +62,7 @@
       giros = 0;
       colisiones = 0;
       tiempoRestante = tiempoMaximo;
-      nivelML.textContent = 'Nivel ML: --';
+      // Mantener el nivel mostrado hasta nueva predicción
       actualizarBarra();
       reiniciarTimer();
     }
