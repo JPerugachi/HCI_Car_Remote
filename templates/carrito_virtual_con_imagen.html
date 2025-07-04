@@ -16,6 +16,7 @@
     #pista { position: relative; width: 550px; height: 300px; background: url('pista.png') center/cover no-repeat; border: 4px solid #003f66; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); margin: 20px auto 40px; overflow: hidden; }
     #carrito { position: absolute; width: 50px; height: 100px; transition: transform 0.5s ease-in-out; }
     #moneda { position: absolute; width: 30px; height: 30px; }
+    .obstaculo { position: absolute; width: 30px; height: 30px; background: #e74c3c; }
   </style>
 </head>
 <body>
@@ -38,21 +39,72 @@
     const nivelML = document.getElementById('nivelML');
     const timerProg = document.getElementById('timerProgress');
 
+    // Game state
     let puntos = 0;
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-    const velocidad = 300;
+    let velocidad = 300;
 
+    // ML metrics
     let giros = 0;
     let colisiones = 0;
     let inicioJuego = Date.now();
 
+    // Timer
     const tiempoMaximo = 30;
     let tiempoRestante = tiempoMaximo;
     let intervalTimer;
 
+    // Position
     let x, y;
+
+    // Current ML level
+    let nivelActual = 'novato';
+    let obstacles = [];
+
+    function manejarNivel(nivel) {
+      nivelActual = nivel;
+      // clear any obstacles
+      obstacles.forEach(o => pista.removeChild(o)); obstacles = [];
+      // reset speed
+      velocidad = 300;
+      if (nivel === 'intermedio' || nivel === 'experto') {
+        // will speed up on coin
+      }
+      if (nivel === 'experto') {
+        crearObstaculos();
+      }
+    }
+
+    function crearObstaculos() {
+      for (let i = 0; i < 3; i++) {
+        const obs = document.createElement('div');
+        obs.className = 'obstaculo';
+        const ox = Math.random() * (pista.clientWidth - 30);
+        const oy = Math.random() * (pista.clientHeight - 30);
+        obs.style.left = `${ox}px`;
+        obs.style.top = `${oy}px`;
+        pista.appendChild(obs);
+        obstacles.push(obs);
+      }
+    }
+
+    function detectarColisionObstaculo() {
+      const rc = carrito.getBoundingClientRect();
+      obstacles.forEach(obs => {
+        const ro = obs.getBoundingClientRect();
+        const overlap = !(rc.right < ro.left || rc.left > ro.right || rc.bottom < ro.top || rc.top > ro.bottom);
+        if (overlap) {
+          colisiones++;
+          tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
+          actualizarBarra();
+          centrarCarrito();
+          if (tiempoRestante <= 0) perderJuego(true);
+        }
+      });
+    }
+
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
@@ -63,7 +115,12 @@
       inicioJuego = Date.now();
       giros = 0;
       colisiones = 0;
+      tiempoRestante = tiempoMaximo;
+      nivelML.textContent = 'Nivel ML: --';
+      actualizarBarra();
       reiniciarTimer();
+      // restart obstacles for expert
+      if (nivelActual === 'experto') crearObstaculos();
     }
 
     function actualizarBarra() {
@@ -72,14 +129,10 @@
     function refrescarTimer() {
       tiempoRestante--;
       actualizarBarra();
-      if (tiempoRestante <= 0) {
-        perderJuego(true);
-      }
+      if (tiempoRestante <= 0) perderJuego(true);
     }
     function reiniciarTimer() {
       clearInterval(intervalTimer);
-      tiempoRestante = tiempoMaximo;
-      actualizarBarra();
       intervalTimer = setInterval(refrescarTimer, 1000);
     }
 
@@ -89,6 +142,7 @@
       moneda.style.left = `${Math.floor(Math.random() * maxX)}px`;
       moneda.style.top = `${Math.floor(Math.random() * maxY)}px`;
     }
+
     function detectarColisionMoneda() {
       const rc = carrito.getBoundingClientRect(), rm = moneda.getBoundingClientRect();
       if (!(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom)) {
@@ -97,7 +151,22 @@
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
         actualizarBarra();
         colocarMoneda();
+        // speed up for intermedio/expert
+        if (nivelActual === 'intermedio' || nivelActual === 'experto') {
+          velocidad = Math.max(50, velocidad - 20);
+          clearInterval(loopInterval);
+          iniciarLoopComandos();
+        }
       }
+    }
+
+    function centrarCarrito() {
+      x = (pista.clientWidth - carrito.clientWidth) / 2;
+      y = (pista.clientHeight - carrito.clientHeight) / 2;
+      carrito.style.left = `${x}px`;
+      carrito.style.top = `${y}px`;
+      carrito.style.transform = 'rotate(0deg)';
+      angulo = 0;
     }
 
     function perderJuego(timeout = false) {
@@ -114,17 +183,12 @@
           body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
         })
         .then(res => res.json())
-        .then(data => {
-          nivelML.textContent = `Nivel ML: ${data.nivel}`;
-        })
+        .then(data => { nivelML.textContent = `Nivel ML: ${data.nivel}`; manejarNivel(data.nivel); })
         .catch(console.error);
       }
       puntos = 0;
       document.getElementById('puntos').textContent = 'Puntos: 0';
-      setTimeout(() => {
-        juegoActivo = true;
-        posicionInicial();
-      }, 1000);
+      setTimeout(() => { juegoActivo = true; posicionInicial(); }, 1000);
     }
 
     function rotar(dir) {
@@ -135,41 +199,12 @@
       giros++;
     }
 
-    function moverPaso(sentido) {
-      if (!juegoActivo) return;
-      const rad = angulo * Math.PI/180;
-      let dx = Math.round(Math.sin(rad)), dy = -Math.round(Math.cos(rad));
-      if (sentido === 'D') { dx *= -1; dy *= -1; }
-      const nx = x + dx * paso, ny = y + dy * paso;
-      if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
-        colisiones++;
-        tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
-        actualizarBarra();
-        // reposicionar sin alterar timer
-        x = (pista.clientWidth - carrito.clientWidth) / 2;
-        y = (pista.clientHeight - carrito.clientHeight) / 2;
-        carrito.style.left = `${x}px`;
-        carrito.style.top = `${y}px`;
-        carrito.style.transform = 'rotate(0deg)';
-        angulo = 0;
-        if (tiempoRestante <= 0) perderJuego(true);
-      } else {
-        x = nx; y = ny;
-        carrito.style.left = `${x}px`;
-        carrito.style.top = `${y}px`;
-        detectarColisionMoneda();
-      }
-    }
-
+    let loopInterval;
     function iniciarLoopComandos() {
       loopInterval = setInterval(() => {
         fetch('/')
           .then(res => res.text())
-          .then(cmd => {
-            cmd = cmd.trim(); if (!cmd) return;
-            if (cmd === 'L' || cmd === 'R') rotar(cmd);
-            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
-          })
+          .then(cmd => { cmd = cmd.trim(); if (!cmd) return; if (cmd === 'L' || cmd === 'R') rotar(cmd); else if (cmd === 'U' || cmd === 'D') moverPaso(cmd); })
           .catch(() => {});
       }, velocidad);
     }
