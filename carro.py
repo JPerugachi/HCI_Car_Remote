@@ -23,15 +23,17 @@ def comando():
 @app.route("/predecir", methods=["POST"])
 def predecir():
     datos = request.get_json() or {}
-    tiempo     = float(datos.get("tiempo", 0))
-    giros      = int(datos.get("giros", 0))
-    colisiones = int(datos.get("colisiones", 0))
+    # <-- Añade esta línea para debug:
+    print("ML payload recibido:", datos)
+
+    tiempo     = float(datos.get("tiempo",     0))
+    giros      = int(  datos.get("giros",      0))
+    colisiones = int(  datos.get("colisiones", 0))
 
     X = np.array([[tiempo, giros, colisiones]])
-    # No int(): cojo directamente la etiqueta (string)
     nivel = modelo.predict(X)[0]
+    return jsonify({"nivel": nivel})
 
-    return jsonify({"nivel": nivel}) 
 
 
 # Archivos estáticos (HTML, imágenes, css...)
