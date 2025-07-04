@@ -46,11 +46,12 @@
 
     let giros = 0;
     let colisiones = 0;
-    let inicioJuego = Date.now();
-
+    let inicioJuego;
+    let ultimaMonedaTime;
+    let intervalTimer;
     const tiempoMaximo = 30;
     let tiempoRestante = tiempoMaximo;
-    let intervalTimer;
+    let tiempos = [];
 
     let x, y;
     function posicionInicial() {
@@ -60,15 +61,22 @@
       carrito.style.top = `${y}px`;
       carrito.style.transform = 'rotate(0deg)';
       angulo = 0;
-      inicioJuego = Date.now();
       giros = 0;
       colisiones = 0;
+      puntos = 0;
+      document.getElementById('puntos').textContent = 'Puntos: 0';
+      inicioJuego = Date.now();
+      ultimaMonedaTime = inicioJuego;
+      tiempos = [];
+      tiempoRestante = tiempoMaximo;
+      actualizarBarra();
       reiniciarTimer();
     }
 
     function actualizarBarra() {
       timerProg.style.width = `${(tiempoRestante / tiempoMaximo) * 100}%`;
     }
+
     function refrescarTimer() {
       tiempoRestante--;
       actualizarBarra();
@@ -76,11 +84,10 @@
         perderJuego(true);
       }
     }
+
     function reiniciarTimer() {
       clearInterval(intervalTimer);
-      tiempoRestante = tiempoMaximo;
-      actualizarBarra();
-      intervalTimer = setInterval(refrescarTimer, 1000);
+      intervaloTimer = setInterval(refrescarTimer, 1000);
     }
 
     function colocarMoneda() {
@@ -89,9 +96,14 @@
       moneda.style.left = `${Math.floor(Math.random() * maxX)}px`;
       moneda.style.top = `${Math.floor(Math.random() * maxY)}px`;
     }
+
     function detectarColisionMoneda() {
-      const rc = carrito.getBoundingClientRect(), rm = moneda.getBoundingClientRect();
+      const rc = carrito.getBoundingClientRect();
+      const rm = moneda.getBoundingClientRect();
       if (!(rc.right < rm.left || rc.left > rm.right || rc.bottom < rm.top || rc.top > rm.bottom)) {
+        const ahora = Date.now();
+        tiempos.push((ahora - ultimaMonedaTime) / 1000);
+        ultimaMonedaTime = ahora;
         puntos++;
         document.getElementById('puntos').textContent = `Puntos: ${puntos}`;
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
@@ -107,11 +119,11 @@
       if (timeout) {
         mensaje.style.display = 'block';
         setTimeout(() => mensaje.style.display = 'none', 2000);
-        const duracion = (Date.now() - inicioJuego) / 1000;
+        const duracionPromedio = tiempos.length ? (tiempos.reduce((a, b) => a + b, 0) / tiempos.length) : tiempoMaximo;
         fetch('/predecir', {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ tiempo: duracion, giros: giros, colisiones: colisiones })
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ tiempo: duracionPromedio, giros, colisiones })
         })
         .then(res => res.json())
         .then(data => {
@@ -119,8 +131,6 @@
         })
         .catch(console.error);
       }
-      puntos = 0;
-      document.getElementById('puntos').textContent = 'Puntos: 0';
       setTimeout(() => {
         juegoActivo = true;
         posicionInicial();
@@ -129,32 +139,27 @@
 
     function rotar(dir) {
       if (!juegoActivo) return;
-      if (dir === 'R') angulo += 90;
-      if (dir === 'L') angulo -= 90;
+      angulo += (dir === 'R' ? 90 : -90);
       carrito.style.transform = `rotate(${angulo}deg)`;
       giros++;
     }
 
     function moverPaso(sentido) {
       if (!juegoActivo) return;
-      const rad = angulo * Math.PI/180;
-      let dx = Math.round(Math.sin(rad)), dy = -Math.round(Math.cos(rad));
+      const rad = angulo * Math.PI / 180;
+      let dx = Math.round(Math.sin(rad));
+      let dy = -Math.round(Math.cos(rad));
       if (sentido === 'D') { dx *= -1; dy *= -1; }
-      const nx = x + dx * paso, ny = y + dy * paso;
+      const nx = x + dx * paso;
+      const ny = y + dy * paso;
       if (nx < 0 || nx > pista.clientWidth - carrito.clientWidth || ny < 0 || ny > pista.clientHeight - carrito.clientHeight) {
         colisiones++;
         tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.25);
         actualizarBarra();
-        // reposicionar sin alterar timer
-        x = (pista.clientWidth - carrito.clientWidth) / 2;
-        y = (pista.clientHeight - carrito.clientHeight) / 2;
-        carrito.style.left = `${x}px`;
-        carrito.style.top = `${y}px`;
-        carrito.style.transform = 'rotate(0deg)';
-        angulo = 0;
-        if (tiempoRestante <= 0) perderJuego(true);
+        posicionInicial();
       } else {
-        x = nx; y = ny;
+        x = nx;
+        y = ny;
         carrito.style.left = `${x}px`;
         carrito.style.top = `${y}px`;
         detectarColisionMoneda();
@@ -162,11 +167,11 @@
     }
 
     function iniciarLoopComandos() {
-      loopInterval = setInterval(() => {
+      setInterval(() => {
         fetch('/')
           .then(res => res.text())
           .then(cmd => {
-            cmd = cmd.trim(); if (!cmd) return;
+            cmd = cmd.trim().toUpperCase();
             if (cmd === 'L' || cmd === 'R') rotar(cmd);
             else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
           })
@@ -174,7 +179,9 @@
       }, velocidad);
     }
 
-    posicionInicial(); colocarMoneda(); iniciarLoopComandos();
+    posicionInicial();
+    colocarMoneda();
+    iniciarLoopComandos();
   </script>
 </body>
 </html>
