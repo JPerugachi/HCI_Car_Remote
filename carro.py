@@ -6,35 +6,34 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Capa de comando
-last_cmd = ""
-
-# Carga tu modelo ML
+# Carga tu modelo entrenado con características: tiempo, giros, colisiones y puntos
 modelo = joblib.load("modelo_carrito.pkl")
 
+# Manejador de comandos (joystick/teclado)
+last_cmd = ""
 @app.route("/")
 def comando():
     global last_cmd
     cmd = request.args.get("cmd")
     if cmd:
-        last_cmd = cmd
-    return last_cmd  # devuelve siempre el último comando
+        last_cmd = cmd.strip().upper()
+    return last_cmd
 
+# Endpoint ML: recibe tiempo, giros, colisiones y puntos, devuelve nivel
 @app.route("/predecir", methods=["POST"])
 def predecir():
     datos = request.get_json() or {}
     tiempo     = float(datos.get("tiempo", 0))
     giros      = int(datos.get("giros", 0))
     colisiones = int(datos.get("colisiones", 0))
+    puntos     = int(datos.get("puntos", 0))
 
-    X = np.array([[tiempo, giros, colisiones]])
-    # No int(): cojo directamente la etiqueta (string)
+    # Pasamos las cuatro características al modelo
+    X = np.array([[tiempo, giros, colisiones, puntos]])
     nivel = modelo.predict(X)[0]
+    return jsonify({"nivel": nivel})
 
-    return jsonify({"nivel": nivel}) 
-
-
-# Archivos estáticos (HTML, imágenes, css...)
+# Servir archivos estáticos (HTML, imágenes, CSS)
 @app.route("/<path:filename>")
 def static_files(filename):
     return send_from_directory('.', filename)
