@@ -24,7 +24,7 @@ def comando():
 
 @app.route("/predecir", methods=["POST"])
 def predecir():
-    print(">>> DATOS ENVIADOS AL MODELO:", tiempo, giros, colisiones)
+    
 
     datos = request.get_json() or {}
     tiempo     = float(datos.get("duracionPromedio", 0))
