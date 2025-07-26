@@ -181,7 +181,7 @@
         fetch('/predecir', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ tiempo: duracionPromedio, giros, colisiones })
+          body: JSON.stringify({ duracionPromedio: duracionPromedio, giros, colisiones })
         })
         .then(res => res.json())
         .then(data => {
