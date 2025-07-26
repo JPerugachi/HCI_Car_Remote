@@ -43,7 +43,9 @@
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-    const velocidad = 300;
+    
+    const velocidadInicial = 300;
+    let velocidad = velocidadInicial; 
 
     let giros = 0;
     let colisiones = 0;
@@ -53,10 +55,25 @@
     const tiempoMaximo = 30;
     let tiempoRestante = tiempoMaximo;
     let tiempos = [];
-    let nivelActual = 'novato';
+    
+    // -- MODIFICADO: Nivel inicial para pruebas.
+    let nivelActual = 'experto'; 
     let obstaculoInterval;
 
     let x, y;
+
+    // ++ AÑADIDO: Nueva función para centralizar la configuración del nivel
+    function configurarNivel(nivel) {
+        // Limpiar intervalo de obstáculos anterior para evitar duplicados
+        if (obstaculoInterval) clearInterval(obstaculoInterval);
+
+        // Activar obstáculos solo para intermedio y experto
+        if (nivel === 'intermedio' || nivel === 'experto') {
+            const spawnRate = nivel === 'experto' ? 1500 : 3000;
+            obstaculoInterval = setInterval(spawnObstaculo, spawnRate);
+        }
+    }
+
     function posicionInicial() {
       x = (pista.clientWidth - carrito.clientWidth) / 2;
       y = (pista.clientHeight - carrito.clientHeight) / 2;
@@ -74,7 +91,12 @@
       tiempoRestante = tiempoMaximo;
       actualizarBarra();
       reiniciarTimer();
-      if (obstaculoInterval) clearInterval(obstaculoInterval);
+      
+      velocidad = velocidadInicial;
+      nivelML.textContent = `Nivel ML: ${nivelActual}`;
+
+      document.querySelectorAll('.obstaculo').forEach(o => o.remove());
+      // -- MODIFICADO: La limpieza del intervalo se hace en configurarNivel
     }
 
     function actualizarBarra() {
@@ -82,9 +104,8 @@
     }
 
     function refrescarTimer() {
-      // Ajuste velocidad según nivel
-      const factors = { novato: 0.5, intermedio: 1, experto: 1.5 };
-      tiempoRestante = Math.max(0, tiempoRestante - factors[nivelActual]);
+      const factors = { novato: 0.5, intermedio: 1, experto: 2.5 };
+      tiempoRestante = Math.max(0, tiempoRestante - (factors[nivelActual] || 0.5));
       actualizarBarra();
       if (tiempoRestante <= 0) {
         perderJuego(true);
@@ -115,9 +136,11 @@
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
         actualizarBarra();
         colocarMoneda();
+        
+        velocidad = Math.max(80, velocidad - 15);
       }
     }
-
+    
     function spawnObstaculo() {
       const o = document.createElement('div');
       o.className = 'obstaculo';
@@ -126,7 +149,22 @@
       o.style.left = `${ox}px`;
       o.style.top  = `${oy}px`;
       pista.appendChild(o);
-      setTimeout(() => pista.removeChild(o), 4000);
+      setTimeout(() => {
+          if(o.parentNode === pista) pista.removeChild(o);
+      }, 4000);
+    }
+    
+    function detectarColisionObstaculo() {
+        const rc = carrito.getBoundingClientRect();
+        document.querySelectorAll('.obstaculo').forEach(o => {
+            const ro = o.getBoundingClientRect();
+            if (!(rc.right < ro.left || rc.left > ro.right || rc.bottom < ro.top || rc.top > ro.bottom)) {
+                colisiones++;
+                tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.3);
+                actualizarBarra();
+                o.remove();
+            }
+        });
     }
 
     function perderJuego(timeout = false) {
@@ -145,17 +183,15 @@
         .then(res => res.json())
         .then(data => {
           nivelActual = data.nivel;
-          nivelML.textContent = `Nivel ML: ${nivelActual}`;
-          if (nivelActual === 'experto') {
-            obstaculoInterval = setInterval(spawnObstaculo, 3000);
-          }
+          // -- MODIFICADO: Llamamos a la nueva función para aplicar los cambios del nivel.
+          configurarNivel(nivelActual);
         })
         .catch(console.error);
       }
       setTimeout(() => {
         juegoActivo = true;
         posicionInicial();
-      }, 1000);
+      }, 2500); // Aumentado el tiempo para que el jugador vea el resultado antes de reiniciar
     }
 
     function rotar(dir) {
@@ -189,25 +225,32 @@
         carrito.style.left = `${x}px`;
         carrito.style.top = `${y}px`;
         detectarColisionMoneda();
+        if (nivelActual === 'intermedio' || nivelActual === 'experto') {
+            detectarColisionObstaculo();
+        }
       }
     }
 
-    function iniciarLoopComandos() {
-      setInterval(() => {
-        fetch('/')
-          .then(res => res.text())
-          .then(cmd => {
-            cmd = cmd.trim().toUpperCase();
-            if (cmd === 'L' || cmd === 'R') rotar(cmd);
-            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
-          })
-          .catch(() => {});
-      }, velocidad);
+    function gameLoop() {
+      fetch('/')
+        .then(res => res.text())
+        .then(cmd => {
+          cmd = cmd.trim().toUpperCase();
+          if (cmd === 'L' || cmd === 'R') rotar(cmd);
+          else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
+        })
+        .catch(() => {})
+        .finally(() => {
+          setTimeout(gameLoop, velocidad);
+        });
     }
 
+    // -- Flujo de inicio del juego --
     posicionInicial();
     colocarMoneda();
-    iniciarLoopComandos();
+    // -- MODIFICADO: Se configura el nivel inicial al cargar la página
+    configurarNivel(nivelActual); 
+    gameLoop();
   </script>
 </body>
 </html>
