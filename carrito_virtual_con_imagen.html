@@ -43,7 +43,10 @@
     const paso = 10;
     let angulo = 0;
     let juegoActivo = true;
-    const velocidad = 300;
+    
+    // -- MODIFICADO: 'velocidad' ahora es variable para poder cambiarla dinámicamente.
+    const velocidadInicial = 300; // Velocidad base al empezar
+    let velocidad = velocidadInicial; // Velocidad actual del juego
 
     let giros = 0;
     let colisiones = 0;
@@ -74,6 +77,12 @@
       tiempoRestante = tiempoMaximo;
       actualizarBarra();
       reiniciarTimer();
+      
+      // ++ AÑADIDO: Resetear la velocidad al inicio de cada partida
+      velocidad = velocidadInicial;
+
+      // Limpiar obstáculos existentes al reiniciar
+      document.querySelectorAll('.obstaculo').forEach(o => o.remove());
       if (obstaculoInterval) clearInterval(obstaculoInterval);
     }
 
@@ -82,9 +91,9 @@
     }
 
     function refrescarTimer() {
-      // Ajuste velocidad según nivel
-      const factors = { novato: 0.5, intermedio: 1, experto: 1.5 };
-      tiempoRestante = Math.max(0, tiempoRestante - factors[nivelActual]);
+      // -- MODIFICADO: Aumenta la velocidad con la que baja el tiempo para el nivel 'experto'.
+      const factors = { novato: 0.5, intermedio: 1, experto: 2.5 };
+      tiempoRestante = Math.max(0, tiempoRestante - (factors[nivelActual] || 0.5));
       actualizarBarra();
       if (tiempoRestante <= 0) {
         perderJuego(true);
@@ -115,9 +124,14 @@
         tiempoRestante = Math.min(tiempoMaximo, tiempoRestante + tiempoMaximo * 0.25);
         actualizarBarra();
         colocarMoneda();
+        
+        // ++ AÑADIDO: Aumentar la velocidad (disminuir el intervalo) en todos los niveles al coger moneda
+        // El valor mínimo es 80ms para que el juego siga siendo controlable.
+        velocidad = Math.max(80, velocidad - 15);
       }
     }
-
+    
+    // ++ AÑADIDO: Función para crear obstáculos
     function spawnObstaculo() {
       const o = document.createElement('div');
       o.className = 'obstaculo';
@@ -126,7 +140,24 @@
       o.style.left = `${ox}px`;
       o.style.top  = `${oy}px`;
       pista.appendChild(o);
-      setTimeout(() => pista.removeChild(o), 4000);
+      setTimeout(() => {
+          // Asegurarse de que el obstáculo aún existe antes de intentar removerlo
+          if(o.parentNode === pista) pista.removeChild(o);
+      }, 4000);
+    }
+    
+    // ++ AÑADIDO: Función para detectar colisión con obstáculos
+    function detectarColisionObstaculo() {
+        const rc = carrito.getBoundingClientRect();
+        document.querySelectorAll('.obstaculo').forEach(o => {
+            const ro = o.getBoundingClientRect();
+            if (!(rc.right < ro.left || rc.left > ro.right || rc.bottom < ro.top || rc.top > ro.bottom)) {
+                colisiones++; // Contar colisión para el modelo ML
+                tiempoRestante = Math.max(0, tiempoRestante - tiempoMaximo * 0.3); // Penalización de tiempo
+                actualizarBarra();
+                o.remove(); // Eliminar obstáculo al chocar
+            }
+        });
     }
 
     function perderJuego(timeout = false) {
@@ -146,8 +177,13 @@
         .then(data => {
           nivelActual = data.nivel;
           nivelML.textContent = `Nivel ML: ${nivelActual}`;
-          if (nivelActual === 'experto') {
-            obstaculoInterval = setInterval(spawnObstaculo, 3000);
+          
+          // -- MODIFICADO: Lógica para iniciar los obstáculos según el nivel
+          if (obstaculoInterval) clearInterval(obstaculoInterval);
+          if (nivelActual === 'intermedio' || nivelActual === 'experto') {
+            // Para 'experto', los obstáculos aparecen más rápido
+            const spawnRate = nivelActual === 'experto' ? 1500 : 3000;
+            obstaculoInterval = setInterval(spawnObstaculo, spawnRate);
           }
         })
         .catch(console.error);
@@ -189,25 +225,32 @@
         carrito.style.left = `${x}px`;
         carrito.style.top = `${y}px`;
         detectarColisionMoneda();
+        // ++ AÑADIDO: Comprobar colisión con obstáculos en cada movimiento
+        if (nivelActual === 'intermedio' || nivelActual === 'experto') {
+            detectarColisionObstaculo();
+        }
       }
     }
 
-    function iniciarLoopComandos() {
-      setInterval(() => {
-        fetch('/')
-          .then(res => res.text())
-          .then(cmd => {
-            cmd = cmd.trim().toUpperCase();
-            if (cmd === 'L' || cmd === 'R') rotar(cmd);
-            else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
-          })
-          .catch(() => {});
-      }, velocidad);
+    // -- MODIFICADO: Se cambia setInterval por un bucle con setTimeout para permitir cambio de velocidad.
+    function gameLoop() {
+      fetch('/')
+        .then(res => res.text())
+        .then(cmd => {
+          cmd = cmd.trim().toUpperCase();
+          if (cmd === 'L' || cmd === 'R') rotar(cmd);
+          else if (cmd === 'U' || cmd === 'D') moverPaso(cmd);
+        })
+        .catch(() => {})
+        .finally(() => {
+          // Vuelve a llamar al bucle con la velocidad actual (que puede haber cambiado)
+          setTimeout(gameLoop, velocidad);
+        });
     }
 
     posicionInicial();
     colocarMoneda();
-    iniciarLoopComandos();
+    gameLoop(); // Iniciar el bucle de juego modificado
   </script>
 </body>
 </html>
