@@ -175,6 +175,9 @@
         mensaje.style.display = 'block';
         setTimeout(() => mensaje.style.display = 'none', 2000);
         const duracionPromedio = tiempos.length ? (tiempos.reduce((a, b) => a + b, 0) / tiempos.length) : tiempoMaximo;
+        console.log(`Duración promedio: ${duracionPromedio.toFixed(2)} segundos`);
+        console.log(`Giros: ${giros}, Colisiones: ${colisiones}`);
+        // -- MODIFICADO: Enviamos los datos al servidor para predecir el nivel
         fetch('/predecir', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
